@@ -6,14 +6,7 @@ pragma solidity ^0.8.20;
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface IRegistry {
-    enum Role {
-        None,
-        Admin,
-        Manufacturer,
-        Distributor,
-        Supplier,
-        Pharmacist
-    }
+    
 
     function isApprovedWithRole(address _addr, IRegistry.Role _role)
         external view returns (bool);
