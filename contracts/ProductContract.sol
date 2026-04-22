@@ -6,7 +6,14 @@ pragma solidity ^0.8.20;
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface IRegistry {
-    
+    enum Role {
+        None,
+        Admin,
+        Manufacturer,
+        Distributor,
+        Supplier,
+        Pharmacist
+    }
 
     function isApprovedWithRole(address _addr, IRegistry.Role _role)
         external view returns (bool);
@@ -155,14 +162,7 @@ contract ProductContract {
         uint256         timestamp
     );
 
-    event StockAdjusted(
-        string  indexed batchNumber,
-        address indexed holder,
-        uint256         previousQty,
-        uint256         newQty,
-        string          reason,
-        uint256         timestamp
-    );
+  
 
     event AuthorisedCallerSet(
         address indexed caller,
