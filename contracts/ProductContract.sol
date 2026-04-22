@@ -186,13 +186,7 @@ contract ProductContract {
     // Modifiers
     // ─────────────────────────────────────────────────────────────
 
-    modifier onlyAdmin() {
-        require(
-            msg.sender == registry.admin(),
-            "Product: caller is not admin"
-        );
-        _;
-    }
+
 
     modifier onlyManufacturer() {
         require(
