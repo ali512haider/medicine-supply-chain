@@ -5,56 +5,13 @@ pragma solidity ^0.8.20;
 // Interface — RegistryContract
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface IRegistry {
-    enum Role {
-        None,
-        Admin,
-        Manufacturer,
-        Distributor,
-        Supplier,
-        Pharmacist
-    }
-
-    function isApprovedWithRole(address _addr, IRegistry.Role _role)
-        external view returns (bool);
-
-    function isApproved(address _addr) external view returns (bool);
-    function getRole(address _addr)    external view returns (IRegistry.Role);
-    function admin()                   external view returns (address);
-}
+import "./IRegistry.sol";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interface — ProductContract
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface IProduct {
-    enum BatchStatus { Active, Expired, Recalled, Depleted }
-
-    function adjustStock(
-        string  calldata _batchNumber,
-        address _from,
-        address _to,
-        uint256 _quantity
-    ) external;
-
-    function deductSale(
-        string  calldata _batchNumber,
-        address _pharmacist,
-        uint256 _quantity
-    ) external;
-
-    function getStockOf(string calldata _batchNumber, address _holder)
-        external view returns (uint256);
-
-    function getBatchStatus(string calldata _batchNumber)
-        external view returns (IProduct.BatchStatus);
-
-    function batchExistsCheck(string calldata _batchNumber)
-        external view returns (bool);
-
-    function isBatchValid(string calldata _batchNumber)
-        external view returns (bool);
-}
+import "./IProduct.sol";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interface — TraceContract  (forward declaration — set after deploy)

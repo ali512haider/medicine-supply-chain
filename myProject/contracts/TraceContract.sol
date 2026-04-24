@@ -5,71 +5,13 @@ pragma solidity ^0.8.20;
 // Interface — RegistryContract
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface IRegistry {
-    enum Role {
-        None,
-        Admin,
-        Manufacturer,
-        Distributor,
-        Supplier,
-        Pharmacist
-    }
-
-    function isApprovedWithRole(address _addr, IRegistry.Role _role)
-        external view returns (bool);
-
-    function isApproved(address _addr) external view returns (bool);
-    function getRole(address _addr)    external view returns (IRegistry.Role);
-    function admin()                   external view returns (address);
-    function getLicenseNumber(address _addr) external view returns (string memory);
-}
+import "./IRegistry.sol";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interface — ProductContract
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface IProduct {
-    enum BatchStatus { Active, Expired, Recalled, Depleted }
-
-    function batchExistsCheck(string calldata _batchNumber)
-        external view returns (bool);
-
-    function getBatchStatus(string calldata _batchNumber)
-        external view returns (IProduct.BatchStatus);
-
-    function getStockOf(string calldata _batchNumber, address _holder)
-        external view returns (uint256);
-
-    function isBatchValid(string calldata _batchNumber)
-        external view returns (bool);
-
-    function getQRData(string calldata _batchNumber)
-        external view returns (string memory qrCodeCID, string memory metadataCID);
-
-    // Full batch info for the public verification page
-    function getBatch(string calldata _batchNumber)
-        external view returns (
-            string  memory batchNumber,
-            string  memory productName,
-            string  memory genericName,
-            string  memory dosageForm,
-            string  memory strength,
-            string  memory manufacturer,
-            address        manufacturerAddr,
-            uint256        costPerUnit,
-            string  memory currency,
-            uint256        mfgDate,
-            uint256        expiryDate,
-            uint256        createdAt,
-            uint256        totalQuantity,
-            uint256        remainingAtSource,
-            uint256        transferredOut,
-            string  memory qrCodeCID,
-            string  memory metadataCID,
-            IProduct.BatchStatus status,
-            string  memory recallReason
-        );
-}
+import "./IProduct.sol";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interface — TransferContract
