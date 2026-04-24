@@ -16147,7 +16147,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-04-24T19:28:08.640Z",
+  "updatedAt": "2026-04-24T19:53:01.492Z",
   "devdoc": {
     "details": "Deploy this contract first; pass its address to the         constructor of ProductContract, TransferContract and         TraceContract.",
     "kind": "dev",

@@ -29764,7 +29764,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-04-24T19:28:08.815Z",
+  "updatedAt": "2026-04-24T19:53:01.962Z",
   "devdoc": {
     "details": "Write path  : only TransferContract (authorised caller) can push events.         Read path   : anyone — no role restriction on view functions.         This contract never moves tokens or stock; it is purely observational         except for the event log it maintains.",
     "kind": "dev",
