@@ -227,7 +227,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -592,7 +593,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -628,7 +630,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -652,7 +655,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -671,7 +675,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -690,7 +695,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -714,7 +720,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -760,7 +767,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -779,7 +787,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -792,7 +801,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -811,7 +821,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -830,7 +841,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -849,7 +861,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -868,7 +881,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -881,7 +895,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -945,7 +960,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -964,7 +980,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     }
   ],
   "metadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_registryAddress\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"caller\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"authorised\",\"type\":\"bool\"}],\"name\":\"AuthorisedCallerSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"batchNumber\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"manufacturerAddr\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"productName\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"totalQuantity\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"expiryDate\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"BatchAdded\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"batchNumber\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"updatedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"BatchDetailsUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"batchNumber\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"enum ProductContract.BatchStatus\",\"name\":\"oldStatus\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"enum ProductContract.BatchStatus\",\"name\":\"newStatus\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"changedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"BatchStatusChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"batchNumber\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"qrCodeCID\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"metadataCID\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"QRUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"batchNumber\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"holder\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"previousQty\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newQty\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"StockAdjusted\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_productName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_genericName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_dosageForm\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_strength\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_manufacturerName\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"_rmNames\",\"type\":\"string[]\"},{\"internalType\":\"uint256[]\",\"name\":\"_rmQuantities\",\"type\":\"uint256[]\"},{\"internalType\":\"string[]\",\"name\":\"_rmUnits\",\"type\":\"string[]\"},{\"internalType\":\"uint256\",\"name\":\"_costPerUnit\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_currency\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_mfgDate\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_expiryDate\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_totalQuantity\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_qrCodeCID\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_metadataCID\",\"type\":\"string\"}],\"name\":\"addBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_quantity\",\"type\":\"uint256\"}],\"name\":\"adjustStock\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"batchExistsCheck\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_pharmacist\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_quantity\",\"type\":\"uint256\"}],\"name\":\"deductSale\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"expireAllOverdueBatches\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"expireBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_manufacturer\",\"type\":\"address\"}],\"name\":\"getActiveBatchesAtManufacturer\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllBatchNumbers\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_holder\",\"type\":\"address\"}],\"name\":\"getAvailableStockBatches\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"getBatch\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"batchNumber\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"productName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"genericName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"dosageForm\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"strength\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"manufacturer\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"manufacturerAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"costPerUnit\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"currency\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"mfgDate\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiryDate\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"createdAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"totalQuantity\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"remainingAtSource\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"transferredOut\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"qrCodeCID\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"metadataCID\",\"type\":\"string\"},{\"internalType\":\"enum ProductContract.BatchStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"recallReason\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"getBatchHolders\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"getBatchStatus\",\"outputs\":[{\"internalType\":\"enum ProductContract.BatchStatus\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_manufacturer\",\"type\":\"address\"}],\"name\":\"getBatchesByManufacturer\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_holder\",\"type\":\"address\"}],\"name\":\"getExpiredStockBatches\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"getQRData\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"qrCodeCID\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"metadataCID\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"getRawMaterials\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"quantity\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"unit\",\"type\":\"string\"}],\"internalType\":\"struct ProductContract.RawMaterial[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getRecalledBatches\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_holder\",\"type\":\"address\"}],\"name\":\"getStockEntry\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"holder\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"quantity\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"receivedAt\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"internalType\":\"struct ProductContract.StockEntry\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_holder\",\"type\":\"address\"}],\"name\":\"getStockOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"isBatchValid\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_reason\",\"type\":\"string\"}],\"name\":\"recallBatch\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"registry\",\"outputs\":[{\"internalType\":\"contract IRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_caller\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_authorised\",\"type\":\"bool\"}],\"name\":\"setAuthorisedCaller\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_genericName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_dosageForm\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_strength\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_costPerUnit\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_currency\",\"type\":\"string\"}],\"name\":\"updateBatchDetails\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_qrCodeCID\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_metadataCID\",\"type\":\"string\"}],\"name\":\"updateQR\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_batchNumber\",\"type\":\"string\"}],\"name\":\"verifyBatch\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"exists_\",\"type\":\"bool\"},{\"internalType\":\"string\",\"name\":\"productName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"genericName\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"manufacturer\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"mfgDate\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiryDate\",\"type\":\"uint256\"},{\"internalType\":\"enum ProductContract.BatchStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"bool\",\"name\":\"isExpired\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isRecalled\",\"type\":\"bool\"},{\"internalType\":\"string\",\"name\":\"qrCodeCID\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Manufacturers add batches here.  TransferContract calls         adjustStock() whenever ownership moves down the chain.         All role checks are delegated to RegistryContract.\",\"kind\":\"dev\",\"methods\":{\"addBatch(string,string,string,string,string,string,string[],uint256[],string[],uint256,string,uint256,uint256,uint256,string,string)\":{\"params\":{\"_batchNumber\":\"Unique batch identifier (e.g. \\\"MFR-2024-B001\\\").\",\"_costPerUnit\":\"Cost per medicine unit (in smallest currency unit).\",\"_currency\":\"Currency string: \\\"PKR\\\", \\\"USD\\\", etc.\",\"_dosageForm\":\"\\\"Tablet\\\", \\\"Syrup\\\", \\\"Injection\\\", etc.\",\"_expiryDate\":\"Expiry date as unix timestamp.\",\"_genericName\":\"INN generic name.\",\"_manufacturerName\":\"Legal name of the manufacturing company.\",\"_metadataCID\":\"IPFS CID of full batch metadata JSON (can be set later).\",\"_mfgDate\":\"Manufacturing date as unix timestamp.\",\"_productName\":\"Brand / trade name.\",\"_qrCodeCID\":\"IPFS CID of the QR code image (can be set later).\",\"_rmNames\":\"Raw material names array.\",\"_rmQuantities\":\"Raw material quantities array (parallel to names).\",\"_rmUnits\":\"Raw material units array (parallel to names).\",\"_strength\":\"\\\"500mg\\\", \\\"250mg/5ml\\\", etc.\",\"_totalQuantity\":\"Total units produced in this batch.\"}},\"adjustStock(string,address,address,uint256)\":{\"params\":{\"_batchNumber\":\"The batch being transferred.\",\"_from\":\"Current holder losing stock.\",\"_quantity\":\"Number of units moving.\",\"_to\":\"Next holder gaining stock.\"}}},\"stateVariables\":{\"allBatchNumbers\":{\"details\":\"All batch numbers ever created (for iteration)\"},\"authorisedCallers\":{\"details\":\"Authorised callers (TransferContract address once deployed)\"},\"batchHolders\":{\"details\":\"All holders who have ever held a batch (for expiry sweeps)\"},\"batches\":{\"details\":\"Primary store: batchNumber \\u2192 Batch\"},\"manufacturerBatches\":{\"details\":\"Per-manufacturer batch index: address \\u2192 batchNumbers[]\"},\"nodeStock\":{\"details\":\"Per-node stock: batchNumber \\u2192 holderAddress \\u2192 StockEntry      Updated by both this contract and TransferContract.\"}},\"title\":\"ProductContract\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"addBatch(string,string,string,string,string,string,string[],uint256[],string[],uint256,string,uint256,uint256,uint256,string,string)\":{\"notice\":\"Add a new medicine batch to the blockchain.\"},\"adjustStock(string,address,address,uint256)\":{\"notice\":\"Deduct stock from a sender and credit it to a receiver.         Called exclusively by TransferContract when ownership moves.\"},\"batchExistsCheck(string)\":{\"notice\":\"Simple existence check used by TraceContract.\"},\"deductSale(string,address,uint256)\":{\"notice\":\"Pharmacist sells to a buyer (reduces pharmacist's stock).         Called by TransferContract when a sale is recorded.\"},\"expireAllOverdueBatches()\":{\"notice\":\"Bulk-expire all batches whose expiryDate has passed.         Anyone can call this (gas incentive can be added by the project).\"},\"expireBatch(string)\":{\"notice\":\"Expire a single batch by batch number.         Callable by admin, or by any approved entity checking their own stock.\"},\"getActiveBatchesAtManufacturer(address)\":{\"notice\":\"Returns all Active (non-expired, non-recalled) batches         that still have stock remaining at the manufacturer source.         Used by Distributor to see what is available to request.\"},\"getAllBatchNumbers()\":{\"notice\":\"Returns all batch numbers ever created.\"},\"getAvailableStockBatches(address)\":{\"notice\":\"Returns batch numbers where a specific address still has         non-zero stock \\u2014 used to show \\\"available stock\\\" dashboards.\"},\"getBatch(string)\":{\"notice\":\"Returns the full Batch struct for a given batch number.         Note: rawMaterials array is NOT returned here (use getRawMaterials).\"},\"getBatchHolders(string)\":{\"notice\":\"Returns all addresses that have ever held a batch.\"},\"getBatchStatus(string)\":{\"notice\":\"Returns the current on-chain status of a batch.         If the expiry date has passed, returns Expired even if         the status hasn't been written yet (lazy check).\"},\"getBatchesByManufacturer(address)\":{\"notice\":\"Returns all batches created by a specific manufacturer.\"},\"getExpiredStockBatches(address)\":{\"notice\":\"Returns batch numbers that are expired AND where the         holder still has non-zero stock (for return/recall workflows).\"},\"getQRData(string)\":{\"notice\":\"Returns QR and metadata CIDs (for the buyer verification page).\"},\"getRawMaterials(string)\":{\"notice\":\"Returns the raw materials list for a batch.\"},\"getRecalledBatches()\":{\"notice\":\"Returns all Recalled batches (system-wide). Admin use.\"},\"getStockEntry(string,address)\":{\"notice\":\"Returns the full StockEntry for a holder.\"},\"getStockOf(string,address)\":{\"notice\":\"Returns the stock quantity of a specific batch held by a specific address.\"},\"isBatchValid(string)\":{\"notice\":\"Check whether a batch is still valid (Active and not expired).\"},\"recallBatch(string,string)\":{\"notice\":\"Mark a batch as Recalled. Callable by the manufacturer who         created it, or by admin.\"},\"setAuthorisedCaller(address,bool)\":{\"notice\":\"Grant or revoke permission for a contract (e.g. TransferContract)         to call adjustStock() and other restricted functions.\"},\"updateBatchDetails(string,string,string,string,uint256,string)\":{\"notice\":\"Correct non-critical batch fields (dosage form, strength, CIDs).         Core identity fields (batchNumber, mfgDate, expiryDate, quantity)         are intentionally immutable after creation.\"},\"updateQR(string,string,string)\":{\"notice\":\"Update or add QR code and metadata IPFS CIDs after batch creation.         Useful when the QR is generated off-chain right after batch is mined.\"},\"verifyBatch(string)\":{\"notice\":\"Returns minimal info needed by a Buyer to verify a medicine.\"}},\"notice\":\"Manages medicine batch creation, raw-material records, QR metadata,         stock levels, expiry tracking, and recall management for the         Blockchain-Based Medicine Supply Chain system.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/ProductContract.sol\":\"ProductContract\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[],\"viaIR\":true},\"sources\":{\"project:/contracts/IRegistry.sol\":{\"keccak256\":\"0xe55cdc96665212b52f5a037443726a69213c2e0c207bb82f1216106ac9fc5cab\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://e174d386167631b76138ecc46922b7b553bea25dd8a0c8c7361725413a5a0bdf\",\"dweb:/ipfs/QmWLFJUmCHxjNdJ4NiFKqoeYN1L28dkn5tzauzqiMe8hZg\"]},\"project:/contracts/ProductContract.sol\":{\"keccak256\":\"0x6419a0b707896a729749f8b6d6afca3bd59ea961477d21925188a037158b0702\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://075ac25c76f75e195e2ac84fd548468defc1e39ee06745963f0b0b3cfd0b837b\",\"dweb:/ipfs/QmTsEEJCLAmRjqBSmip4HVbf1PEQZF5aRTb2EoMG3XYitV\"]}},\"version\":1}",
@@ -28590,9 +28607,17 @@
     "name": "solc",
     "version": "0.8.20+commit.a1b79de6.Emscripten.clang"
   },
-  "networks": {},
+  "networks": {
+    "5777": {
+      "events": {},
+      "links": {},
+      "address": "0x2A3fD02d8819FB60191732FA466577666b8C63c6",
+      "transactionHash": "0x24b61fe973e165180ff55cc5a9af28bc5c6fa1343096d12dd4017c975e8cd6e0"
+    }
+  },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-04-24T20:25:26.339Z",
+  "updatedAt": "2026-04-24T21:30:15.969Z",
+  "networkType": "ethereum",
   "devdoc": {
     "details": "Manufacturers add batches here.  TransferContract calls         adjustStock() whenever ownership moves down the chain.         All role checks are delegated to RegistryContract.",
     "kind": "dev",

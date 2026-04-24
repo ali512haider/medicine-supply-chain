@@ -5,22 +5,34 @@ export default function Register() {
   const { account, contracts } = useWeb3();
   const [roleToRequest, setRoleToRequest] = useState('2'); // Default: Manufacturer
   const [name, setName] = useState('');
-  const [license, setLicense] = useState('');
+  const [email, setEmail] = useState('');
+  const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!contracts.registry) return;
+    if (!contracts.registry) {
+      setIsError(true);
+      setMessage('Registry contract not connected. Please reconnect your wallet.');
+      return;
+    }
 
     try {
       setLoading(true);
+      setIsError(false);
       setMessage('Sending request to blockchain...');
-      const tx = await contracts.registry.requestRegistration(roleToRequest, name, license);
+      // Contract signature: requestRegistration(Role _role, string _name, string _email, string _location)
+      const tx = await contracts.registry.requestRegistration(roleToRequest, name, email, location);
       await tx.wait();
-      setMessage('Registration request submitted successfully! Please wait for admin approval.');
+      setIsError(false);
+      setMessage('✅ Registration request submitted! Please wait for admin approval.');
+      // Reset form
+      setName(''); setEmail(''); setLocation('');
     } catch (err) {
       console.error(err);
+      setIsError(true);
       setMessage(err.reason || err.message || 'Failed to submit registration request.');
     } finally {
       setLoading(false);
@@ -29,11 +41,21 @@ export default function Register() {
 
   return (
     <div className="container page-content animate-fade-in">
-      <div className="glass-panel" style={{ maxWidth: '500px', margin: '0 auto' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '2rem' }}>Request Registration</h2>
-        
+      <div className="glass-panel" style={{ maxWidth: '520px', margin: '0 auto' }}>
+        <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Request Registration</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+          Submit a registration request. The admin will review and approve your account.
+        </p>
+
         {message && (
-          <div style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', borderRadius: '8px', marginBottom: '1.5rem' }}>
+          <div style={{
+            padding: '1rem',
+            background: isError ? 'rgba(239,68,68,0.1)' : 'rgba(59,130,246,0.1)',
+            color: isError ? 'var(--accent-danger)' : 'var(--accent-primary)',
+            borderRadius: '8px',
+            marginBottom: '1.5rem',
+            fontSize: '0.9rem'
+          }}>
             {message}
           </div>
         )}
@@ -41,9 +63,9 @@ export default function Register() {
         <form onSubmit={handleRegister}>
           <div className="form-group">
             <label className="form-label">Role</label>
-            <select 
-              className="form-input" 
-              value={roleToRequest} 
+            <select
+              className="form-input"
+              value={roleToRequest}
               onChange={e => setRoleToRequest(e.target.value)}
             >
               <option value="2">Manufacturer</option>
@@ -52,32 +74,57 @@ export default function Register() {
               <option value="5">Pharmacist</option>
             </select>
           </div>
-          
+
           <div className="form-group">
-            <label className="form-label">Company/Entity Name</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              value={name} 
-              onChange={e => setName(e.target.value)} 
-              required 
+            <label className="form-label">Company / Entity Name</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g. PharmaCo Ltd."
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">License Number</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              value={license} 
-              onChange={e => setLicense(e.target.value)} 
-              required 
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              className="form-input"
+              placeholder="e.g. contact@pharmaco.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading || !account}>
-            {loading ? 'Submitting...' : 'Submit Request'}
+          <div className="form-group">
+            <label className="form-label">Location / Address</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g. Karachi, Pakistan"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: '0.5rem' }}
+            disabled={loading || !account}
+          >
+            {loading ? 'Submitting...' : 'Submit Registration Request'}
           </button>
+
+          {!account && (
+            <p style={{ textAlign: 'center', color: 'var(--accent-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+              Please connect your wallet first.
+            </p>
+          )}
         </form>
       </div>
     </div>

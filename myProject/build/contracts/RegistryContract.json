@@ -204,7 +204,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -372,7 +373,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -391,7 +393,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -410,7 +413,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -429,7 +433,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -500,7 +505,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -571,7 +577,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -584,7 +591,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -649,7 +657,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [],
@@ -662,7 +671,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -733,7 +743,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -752,7 +763,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     },
     {
       "inputs": [
@@ -771,7 +783,8 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function"
+      "type": "function",
+      "constant": true
     }
   ],
   "metadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_admin\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousAdmin\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"entity\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"enum RegistryContract.Role\",\"name\":\"role\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"licenseNumber\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"approvedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"EntityApproved\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"entity\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"EntityDetailsUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"entity\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"reactivatedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"EntityReactivated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"entity\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"rejectedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"EntityRejected\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"entity\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"revokedBy\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"EntityRevoked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"applicant\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"enum RegistryContract.Role\",\"name\":\"role\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"RegistrationRequested\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_entity\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_licenseNo\",\"type\":\"string\"}],\"name\":\"approveEntity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_licenseNo\",\"type\":\"string\"}],\"name\":\"getAddressByLicense\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllRegistered\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"_role\",\"type\":\"uint8\"}],\"name\":\"getApprovedByRole\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"walletAddress\",\"type\":\"address\"},{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"role\",\"type\":\"uint8\"},{\"internalType\":\"enum RegistryContract.ApprovalStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"email\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"location\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"licenseNumber\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"registeredAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"approvedAt\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"internalType\":\"struct RegistryContract.Entity[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"getEntity\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"walletAddress\",\"type\":\"address\"},{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"role\",\"type\":\"uint8\"},{\"internalType\":\"enum RegistryContract.ApprovalStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"email\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"location\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"licenseNumber\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"registeredAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"approvedAt\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"internalType\":\"struct RegistryContract.Entity\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_licenseNo\",\"type\":\"string\"}],\"name\":\"getEntityByLicense\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"walletAddress\",\"type\":\"address\"},{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"role\",\"type\":\"uint8\"},{\"internalType\":\"enum RegistryContract.ApprovalStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"email\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"location\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"licenseNumber\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"registeredAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"approvedAt\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"internalType\":\"struct RegistryContract.Entity\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"getLicenseNumber\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getPendingEntities\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"walletAddress\",\"type\":\"address\"},{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"role\",\"type\":\"uint8\"},{\"internalType\":\"enum RegistryContract.ApprovalStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"email\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"location\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"licenseNumber\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"registeredAt\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"approvedAt\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"internalType\":\"struct RegistryContract.Entity[]\",\"name\":\"\",\"type\":\"tuple[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getPendingRequests\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"getRole\",\"outputs\":[{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"getStatus\",\"outputs\":[{\"internalType\":\"enum RegistryContract.ApprovalStatus\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"isApproved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"},{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"_role\",\"type\":\"uint8\"}],\"name\":\"isApprovedWithRole\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_entity\",\"type\":\"address\"}],\"name\":\"reactivateEntity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_entity\",\"type\":\"address\"}],\"name\":\"rejectEntity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enum RegistryContract.Role\",\"name\":\"_role\",\"type\":\"uint8\"},{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_email\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_location\",\"type\":\"string\"}],\"name\":\"requestRegistration\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_entity\",\"type\":\"address\"}],\"name\":\"revokeEntity\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newAdmin\",\"type\":\"address\"}],\"name\":\"transferAdmin\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_entity\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_email\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_location\",\"type\":\"string\"}],\"name\":\"updateEntityDetails\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_email\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"_location\",\"type\":\"string\"}],\"name\":\"updateMyDetails\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Deploy this contract first; pass its address to the         constructor of ProductContract, TransferContract and         TraceContract.\",\"kind\":\"dev\",\"methods\":{\"approveEntity(address,string)\":{\"params\":{\"_entity\":\"Applicant wallet address.\",\"_licenseNo\":\"Unique license string (e.g. \\\"MFR-2024-001\\\").\"}},\"constructor\":{\"params\":{\"_admin\":\"The wallet address that will act as system admin.               Typically the deployer's address.\"}},\"requestRegistration(uint8,string,string,string)\":{\"params\":{\"_email\":\"Contact email (stored off-chain ref only).\",\"_location\":\"City / address string.\",\"_name\":\"Full legal name / business name.\",\"_role\":\"One of: Manufacturer(2), Distributor(3),                   Supplier(4), Pharmacist(5). Cannot self-register as Admin.\"}}},\"stateVariables\":{\"allRegistered\":{\"details\":\"All addresses that have ever submitted a registration request\"},\"entities\":{\"details\":\"Primary registry: wallet \\u2192 Entity\"},\"isPending\":{\"details\":\"Quick set-membership for pendingList (avoid O(n) scan on removal)\"},\"licenseToAddress\":{\"details\":\"License number uniqueness guard: licenseNo \\u2192 assigned address\"},\"pendingList\":{\"details\":\"Addresses currently awaiting admin decision\"}},\"title\":\"RegistryContract\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"approveEntity(address,string)\":{\"notice\":\"Approve a pending registration and assign a license number.\"},\"getAddressByLicense(string)\":{\"notice\":\"Returns the wallet address registered under a given license number.         Returns address(0) if not found.\"},\"getAllRegistered()\":{\"notice\":\"Returns all registered addresses (approved + pending + rejected + revoked).\"},\"getApprovedByRole(uint8)\":{\"notice\":\"Returns all entities of a specific role that are Approved.         Used by Manufacturer to list available Distributors, etc.\"},\"getEntity(address)\":{\"notice\":\"Returns full entity record for an address.\"},\"getEntityByLicense(string)\":{\"notice\":\"Lookup an entity by license number.\"},\"getLicenseNumber(address)\":{\"notice\":\"Returns the license number assigned to an address.         Returns empty string if not yet assigned.\"},\"getPendingEntities()\":{\"notice\":\"Returns the full list of pending requests with their Entity details.         Useful for the admin panel to render a table in one call.\"},\"getPendingRequests()\":{\"notice\":\"Returns all pending registration requests (for the admin dashboard).\"},\"getRole(address)\":{\"notice\":\"Returns the role of an address regardless of approval status.\"},\"getStatus(address)\":{\"notice\":\"Returns the approval status of an address.\"},\"isApproved(address)\":{\"notice\":\"Returns true if the address is approved for ANY valid role.\"},\"isApprovedWithRole(address,uint8)\":{\"notice\":\"Primary guard used by other contracts.         Returns true only if the address is Approved AND holds the expected role.\"},\"reactivateEntity(address)\":{\"notice\":\"Re-approve a previously rejected or revoked entity         (e.g. after appeal), keeping the same license number.\"},\"rejectEntity(address)\":{\"notice\":\"Reject a pending registration request.\"},\"requestRegistration(uint8,string,string,string)\":{\"notice\":\"Submit a signup request. Admin must approve before the         entity can interact with other contracts.\"},\"revokeEntity(address)\":{\"notice\":\"Revoke an already-approved entity (e.g. license violation).         The entity's on-chain record is preserved for audit purposes         but isApproved() will return false.\"},\"transferAdmin(address)\":{\"notice\":\"Transfer admin rights to a new wallet.         The new admin must already be an approved entity OR         be a fresh address (role becomes Admin).\"},\"updateEntityDetails(address,string,string,string)\":{\"notice\":\"Admin can correct or update an entity's profile fields.         Does NOT change role or approval status.\"},\"updateMyDetails(string,string)\":{\"notice\":\"Approved entities can update their own email and location.         Name and role changes require admin action.\"}},\"notice\":\"Central identity & access-control registry for the         Blockchain-Based Medicine Supply Chain system.         All other contracts query this contract to verify         that a caller is approved and holds the correct role.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/RegistryContract.sol\":\"RegistryContract\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[],\"viaIR\":true},\"sources\":{\"project:/contracts/RegistryContract.sol\":{\"keccak256\":\"0xc33a4e8b19e37039c2bec49355da61df666a7dbfb4b4524cce40d5c8c258e029\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://2283aa65ed44a6f5fd9818898b2b5be023a3e1956e0c0c9259c798b11ab110b1\",\"dweb:/ipfs/QmTr8xWfdZWkv1aV6Djjqz5Es7MxEbSr1wrAWQiAebgAid\"]}},\"version\":1}",
@@ -16145,9 +16158,199 @@
     "name": "solc",
     "version": "0.8.20+commit.a1b79de6.Emscripten.clang"
   },
-  "networks": {},
+  "networks": {
+    "5777": {
+      "events": {
+        "0xf8ccb027dfcd135e000e9d45e6cc2d662578a8825d4c45b5e32e0adf67e79ec6": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "previousAdmin",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "newAdmin",
+              "type": "address"
+            }
+          ],
+          "name": "AdminTransferred",
+          "type": "event"
+        },
+        "0xb99357eaf041c6b4f9ef26c88b38609fbf977298507bb7570887fab2714679c2": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "entity",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "enum RegistryContract.Role",
+              "name": "role",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "licenseNumber",
+              "type": "string"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "approvedBy",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "EntityApproved",
+          "type": "event"
+        },
+        "0x22e408821d014865f7272491db504e0432b9eb1f6dd8d3c86b75407db0d584f8": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "entity",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "EntityDetailsUpdated",
+          "type": "event"
+        },
+        "0xff0b22130054be234bcdda0c1c7c0868ef2feab7b8123d07ae5a50cb2574ef02": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "entity",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "reactivatedBy",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "EntityReactivated",
+          "type": "event"
+        },
+        "0x8d359aca665b1a62f2fd210777e6936c72df54cc65eefa41766cf20f746a075a": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "entity",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "rejectedBy",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "EntityRejected",
+          "type": "event"
+        },
+        "0x1a66b2e2e4e77f417c0f793f30f1b62e1371ae6ec6e4e3c008d5d8059808d774": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "entity",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "revokedBy",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "EntityRevoked",
+          "type": "event"
+        },
+        "0x1f77daf0cde58fb801ee20100afb681b11e993b40a01c40ee509f9b11053c49e": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "applicant",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "enum RegistryContract.Role",
+              "name": "role",
+              "type": "uint8"
+            },
+            {
+              "indexed": false,
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "RegistrationRequested",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0xb29eAB69948128f5F5c806c2dfeC424B57F9C8d4",
+      "transactionHash": "0xa8aadc8e97e5b1fb52a33e9f7841fc6a0ebcb9ba783c48c481df104c5a06d78d"
+    }
+  },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-04-24T20:25:26.369Z",
+  "updatedAt": "2026-04-24T21:33:14.159Z",
+  "networkType": "ethereum",
   "devdoc": {
     "details": "Deploy this contract first; pass its address to the         constructor of ProductContract, TransferContract and         TraceContract.",
     "kind": "dev",

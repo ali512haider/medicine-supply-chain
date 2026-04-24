@@ -35,9 +35,9 @@ export const Web3Provider = ({ children }) => {
     if (!REGISTRY_ADDRESS) return null;
     
     const registry = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, signerOrProvider);
-    const product = new ethers.Contract(PRODUCT_ADDRESS, PRODUCT_ABI, signerOrProvider);
-    const transfer = new ethers.Contract(TRANSFER_ADDRESS, TRANSFER_ABI, signerOrProvider);
-    const trace = new ethers.Contract(TRACE_ADDRESS, TRACE_ABI, signerOrProvider);
+    const product  = PRODUCT_ADDRESS  ? new ethers.Contract(PRODUCT_ADDRESS,  PRODUCT_ABI,  signerOrProvider) : null;
+    const transfer = TRANSFER_ADDRESS ? new ethers.Contract(TRANSFER_ADDRESS, TRANSFER_ABI, signerOrProvider) : null;
+    const trace    = TRACE_ADDRESS    ? new ethers.Contract(TRACE_ADDRESS,    TRACE_ABI,    signerOrProvider) : null;
     
     setContracts({ registry, product, transfer, trace });
     return registry;
