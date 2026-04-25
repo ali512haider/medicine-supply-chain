@@ -28919,12 +28919,12 @@
         }
       },
       "links": {},
-      "address": "0x6e0764aAC8E37186ee06A96553380322A7284520",
-      "transactionHash": "0xb0521cd998061355db646e791cdf67ce9ac92e263c3c6818ed5350ae1da2257d"
+      "address": "0xDAf7c16018deC5a5042f3b136A230055a23a26DC",
+      "transactionHash": "0xdfed757fa5f046e611de8e98de4e839b8975d67b5ef60e9a4572453384ef7cba"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-04-25T20:18:29.509Z",
+  "updatedAt": "2026-04-25T20:28:19.485Z",
   "networkType": "ethereum",
   "devdoc": {
     "details": "Manufacturers add batches here.  TransferContract calls         adjustStock() whenever ownership moves down the chain.         All role checks are delegated to RegistryContract.",

@@ -28300,12 +28300,12 @@
         }
       },
       "links": {},
-      "address": "0x7a554a16a6BD78CE0CF93239b325a261a178B484",
-      "transactionHash": "0x5d107c307fbc9e5a143d2f3b047e73e98f87ba46255c567bed1aa8a2bfa62347"
+      "address": "0xFBf6159A59b496921395d1C67b21da07C2e994CF",
+      "transactionHash": "0x0a81d0fe50e91efbc633700ca84fcc5ebe0411aef88db61b379e9478817c64d9"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-04-25T20:18:29.585Z",
+  "updatedAt": "2026-04-25T20:28:19.584Z",
   "networkType": "ethereum",
   "devdoc": {
     "details": "Write path  : only TransferContract (authorised caller) can push events.         Read path   : anyone — no role restriction on view functions.         This contract never moves tokens or stock; it is purely observational         except for the event log it maintains.",

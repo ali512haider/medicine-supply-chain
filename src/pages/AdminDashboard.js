@@ -25,19 +25,26 @@ export default function AdminDashboard() {
       return;
     }
     setLoading(true);
+    setActionMsg('⌛ Loading data from blockchain...');
     try {
-      console.log("Admin: Fetching data...");
+      console.log("Admin: Starting fetch sequence...");
       
-      // 1. Get All Entities (Try new getter, fallback to events)
+      // 1. Get All Entities
       let allAddresses = [];
       try {
-        allAddresses = await contracts.registry.getAllEntities();
-        console.log("Fetched entities via getter:", allAddresses.length);
+        // Try various getter names just in case
+        if (typeof contracts.registry.getAllEntities === 'function') {
+          allAddresses = await contracts.registry.getAllEntities();
+          console.log("Entities found via getAllEntities:", allAddresses.length);
+        } else {
+          throw new Error("getAllEntities not found");
+        }
       } catch (e) {
-        console.log("Getter failed, falling back to events...");
+        console.warn("Getter failed, using events for entities...");
         const filter = contracts.registry.filters.RegistrationRequested();
-        const events = await contracts.registry.queryFilter(filter);
+        const events = await contracts.registry.queryFilter(filter, 0); // Search from block 0
         allAddresses = [...new Set(events.map(ev => ev.args?.applicant || ev.args[0]))];
+        console.log("Entities found via events:", allAddresses.length);
       }
 
       const pending = [];
@@ -47,8 +54,17 @@ export default function AdminDashboard() {
       const pharms = [];
 
       for (let addr of allAddresses) {
+        if (!addr) continue;
         try {
           const entity = await contracts.registry.getEntity(addr);
+          let batchCount = 0;
+          if (Number(entity.role) === 2 && entity.status.toString() === '2') {
+             try {
+                const mBatches = await contracts.product.getBatchesByManufacturer(addr);
+                batchCount = mBatches.length;
+             } catch(e) { console.warn("Could not get batches for mfr", addr); }
+          }
+          
           const data = {
             address: addr,
             role: Number(entity.role),
@@ -56,7 +72,8 @@ export default function AdminDashboard() {
             email: entity.email,
             location: entity.location,
             status: Number(entity.status),
-            license: entity.licenseNumber
+            license: entity.licenseNumber,
+            batchCount: batchCount
           };
 
           if (data.status === 1) pending.push(data); 
@@ -66,29 +83,35 @@ export default function AdminDashboard() {
             else if (data.role === 4) supps.push(data);
             else if (data.role === 5) pharms.push(data);
           }
-        } catch (err) { console.error("Error fetching entity", addr, err); }
+        } catch (err) { console.warn("Skip entity:", addr); }
       }
 
       // 2. Fetch All Batches
       let batchIds = [];
       try {
-        batchIds = await contracts.product.getAllBatches();
+        if (typeof contracts.product.getAllBatches === 'function') {
+          batchIds = await contracts.product.getAllBatches();
+        } else if (typeof contracts.product.getAllBatchNumbers === 'function') {
+          batchIds = await contracts.product.getAllBatchNumbers();
+        } else {
+          throw new Error("Batch getter not found");
+        }
+        console.log("Batches found via getter:", batchIds.length);
       } catch (e) {
+        console.warn("Batch getter failed, using events...");
         const bFilter = contracts.product.filters.BatchAdded();
-        const bEvents = await contracts.product.queryFilter(bFilter);
-        // Note: indexed strings are hashes, but maybe we can try queryFilter for other events
-        // Better fallback: just use the ones we found via events if getter fails
+        const bEvents = await contracts.product.queryFilter(bFilter, 0);
+        // Fallback: if we can't get the string, we use the hash but getBatch might fail
         batchIds = bEvents.map(ev => ev.args?.batchNumber || ev.args[0]);
+        console.log("Batch hashes found via events:", batchIds.length);
       }
 
       const batches = [];
       for (let bid of batchIds) {
         try {
-          // If bid is a hash (from indexed string), getBatch might fail. 
-          // This is why the contract change was important.
           const b = await contracts.product.getBatch(bid);
-          batches.push(b);
-        } catch (err) { console.error("Error fetching batch", bid, err); }
+          if (b.exists) batches.push(b);
+        } catch (err) { console.warn("Skip batch:", bid); }
       }
 
       setPendingRequests(pending);
@@ -97,9 +120,10 @@ export default function AdminDashboard() {
       setStats({
         mfr: mfrs.length, dist: dists.length, supp: supps.length, pharm: pharms.length, batches: batches.length
       });
-
+      setActionMsg('');
     } catch (err) {
-      console.error('Admin Dashboard Fetch Error:', err);
+      console.error('Admin Dashboard Global Error:', err);
+      setActionMsg('❌ Error loading dashboard. Check console.');
     } finally {
       setLoading(false);
     }
@@ -198,6 +222,7 @@ export default function AdminDashboard() {
                 <th>Name</th>
                 <th>Address</th>
                 <th>License</th>
+                {type === 'manufacturers' && <th>Batches Created</th>}
                 <th>Location</th>
               </tr>
             </thead>
@@ -207,6 +232,7 @@ export default function AdminDashboard() {
                   <td>{e.name}</td>
                   <td style={{fontSize: '0.8rem', fontFamily: 'monospace'}}>{e.address.slice(0,10)}...</td>
                   <td>{e.license}</td>
+                  {type === 'manufacturers' && <td style={{fontWeight: 'bold', color: '#10b981'}}>{e.batchCount}</td>}
                   <td>{e.location}</td>
                 </tr>
               ))}
