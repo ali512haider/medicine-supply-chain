@@ -20,31 +20,16 @@ export default function AdminDashboard() {
 
   // Fetch Stats & Basic Data
   const fetchData = useCallback(async () => {
-    if (!contracts.registry || !contracts.product) {
-      console.warn("Contracts not initialized yet");
-      return;
-    }
+    if (!contracts.registry || !contracts.product) return;
     setLoading(true);
-    setActionMsg('⌛ Loading data from blockchain...');
+    setActionMsg('⌛ Loading data...');
     try {
-      console.log("Admin: Starting fetch sequence...");
-      
-      // 1. Get All Entities
+      // 1. Get All Entities (Use the dedicated getter)
       let allAddresses = [];
       try {
-        // Try various getter names just in case
-        if (typeof contracts.registry.getAllEntities === 'function') {
-          allAddresses = await contracts.registry.getAllEntities();
-          console.log("Entities found via getAllEntities:", allAddresses.length);
-        } else {
-          throw new Error("getAllEntities not found");
-        }
+        allAddresses = await contracts.registry.getAllRegistered();
       } catch (e) {
-        console.warn("Getter failed, using events for entities...");
-        const filter = contracts.registry.filters.RegistrationRequested();
-        const events = await contracts.registry.queryFilter(filter, 0); // Search from block 0
-        allAddresses = [...new Set(events.map(ev => ev.args?.applicant || ev.args[0]))];
-        console.log("Entities found via events:", allAddresses.length);
+        allAddresses = await contracts.registry.getAllEntities();
       }
 
       const pending = [];
@@ -54,26 +39,18 @@ export default function AdminDashboard() {
       const pharms = [];
 
       for (let addr of allAddresses) {
-        if (!addr) continue;
         try {
           const entity = await contracts.registry.getEntity(addr);
-          let batchCount = 0;
-          if (Number(entity.role) === 2 && entity.status.toString() === '2') {
-             try {
-                const mBatches = await contracts.product.getBatchesByManufacturer(addr);
-                batchCount = mBatches.length;
-             } catch(e) { console.warn("Could not get batches for mfr", addr); }
+          let bCount = 0;
+          if (Number(entity.role) === 2 && Number(entity.status) === 2) {
+             const mb = await contracts.product.getBatchesByManufacturer(addr);
+             bCount = mb.length;
           }
           
           const data = {
-            address: addr,
-            role: Number(entity.role),
-            name: entity.name,
-            email: entity.email,
-            location: entity.location,
-            status: Number(entity.status),
-            license: entity.licenseNumber,
-            batchCount: batchCount
+            address: addr, role: Number(entity.role), name: entity.name,
+            email: entity.email, location: entity.location, status: Number(entity.status),
+            license: entity.licenseNumber, batchCount: bCount
           };
 
           if (data.status === 1) pending.push(data); 
@@ -83,35 +60,17 @@ export default function AdminDashboard() {
             else if (data.role === 4) supps.push(data);
             else if (data.role === 5) pharms.push(data);
           }
-        } catch (err) { console.warn("Skip entity:", addr); }
+        } catch (err) {}
       }
 
       // 2. Fetch All Batches
-      let batchIds = [];
-      try {
-        if (typeof contracts.product.getAllBatches === 'function') {
-          batchIds = await contracts.product.getAllBatches();
-        } else if (typeof contracts.product.getAllBatchNumbers === 'function') {
-          batchIds = await contracts.product.getAllBatchNumbers();
-        } else {
-          throw new Error("Batch getter not found");
-        }
-        console.log("Batches found via getter:", batchIds.length);
-      } catch (e) {
-        console.warn("Batch getter failed, using events...");
-        const bFilter = contracts.product.filters.BatchAdded();
-        const bEvents = await contracts.product.queryFilter(bFilter, 0);
-        // Fallback: if we can't get the string, we use the hash but getBatch might fail
-        batchIds = bEvents.map(ev => ev.args?.batchNumber || ev.args[0]);
-        console.log("Batch hashes found via events:", batchIds.length);
-      }
-
+      let batchIds = await contracts.product.getAllBatches();
       const batches = [];
       for (let bid of batchIds) {
         try {
           const b = await contracts.product.getBatch(bid);
           if (b.exists) batches.push(b);
-        } catch (err) { console.warn("Skip batch:", bid); }
+        } catch (err) {}
       }
 
       setPendingRequests(pending);
@@ -122,8 +81,8 @@ export default function AdminDashboard() {
       });
       setActionMsg('');
     } catch (err) {
-      console.error('Admin Dashboard Global Error:', err);
-      setActionMsg('❌ Error loading dashboard. Check console.');
+      console.error(err);
+      setActionMsg('❌ Error. Check if Ganache is running.');
     } finally {
       setLoading(false);
     }
