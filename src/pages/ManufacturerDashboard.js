@@ -131,12 +131,16 @@ export default function ManufacturerDashboard() {
       const mfgUnix = Math.floor(new Date(newBatch.mfgDate).getTime() / 1000);
       const expUnix = Math.floor(new Date(newBatch.expiryDate).getTime() / 1000);
 
+      // Ensure numeric values are passed correctly
+      const qty = window.BigInt(newBatch.totalQuantity || 0);
+      const cost = window.BigInt(newBatch.costPerUnit || 0);
+
       const tx = await contracts.product.addBatch(
         newBatch.batchNumber, newBatch.productName, newBatch.genericName,
         newBatch.dosageForm, newBatch.strength, newBatch.manufacturerName,
         ['N/A'], [0], ['N/A'], // Placeholder raw materials
-        newBatch.costPerUnit || 0, newBatch.currency || 'PKR',
-        mfgUnix, expUnix, newBatch.totalQuantity,
+        cost, newBatch.currency || 'PKR',
+        mfgUnix, expUnix, qty,
         "", "" // CIDs
       );
       await tx.wait();
@@ -147,7 +151,10 @@ export default function ManufacturerDashboard() {
       });
       fetchData();
       setActiveTab('overview');
-    } catch (err) { setActionMsg('❌ Error creating batch'); }
+    } catch (err) { 
+      console.error(err);
+      setActionMsg('❌ ' + (err.reason || err.message || 'Error creating batch')); 
+    }
   };
 
   const handleTransfer = async (e) => {
