@@ -10,6 +10,7 @@ export default function Navbar() {
     switch (role) {
       case 'Admin': return '/admin';
       case 'Manufacturer': return '/manufacturer';
+      case 'Distributor': return '/distributor';
       default: return '/register';
     }
   };
