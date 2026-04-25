@@ -48,10 +48,16 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+import { useLocation } from 'react-router-dom';
+
 function AppContent() {
+  const location = useLocation();
+  const dashboardRoutes = ['/admin', '/manufacturer', '/distributor', '/supplier', '/pharmacist'];
+  const showNavbar = !dashboardRoutes.includes(location.pathname);
+
   return (
     <div className="App">
-      <Navbar />
+      {showNavbar && <Navbar />}
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Home />} />

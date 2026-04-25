@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 
-// --- Professional SVG Icons ---
+// --- Professional Emerald SVG Icons ---
 const Icons = {
   Overview: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
@@ -18,16 +18,19 @@ const Icons = {
   Receipt: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 17.5V6.5"></path></svg>
   ),
-  Menu: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-  ),
   Alert: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+  ),
+  LogOut: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+  ),
+  Menu: () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
   )
 };
 
 export default function PharmacistDashboard() {
-  const { contracts, account } = useWeb3();
+  const { contracts, account, disconnectWallet } = useWeb3();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
@@ -45,7 +48,6 @@ export default function PharmacistDashboard() {
   const [sellData, setSellData] = useState({ batchNumber: '', quantity: '', customerName: '' });
   const [lastInvoice, setLastInvoice] = useState(null);
 
-  // Handle Resize
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
@@ -60,18 +62,15 @@ export default function PharmacistDashboard() {
     if (!contracts.transfer || !account) return;
     setLoading(true);
     try {
-      // 1. Fetch Inbox (Incoming from Supplier)
       const pending = await contracts.transfer.getMyPendingInbox();
       setInbox(pending);
 
-      // 2. Fetch Inventory
       const stockIds = await contracts.product.getAvailableStockBatches(account);
       const stockList = [];
       for (let id of stockIds) {
         const b = await contracts.product.getBatch(id);
         const qty = await contracts.product.getStockOf(id, account);
         const s = await contracts.product.getBatchStatus(id);
-        
         stockList.push({
           batchNumber: b.batchNumber,
           productName: b.productName,
@@ -84,7 +83,6 @@ export default function PharmacistDashboard() {
       }
       setInventory(stockList);
 
-      // 3. Fetch Sales History
       const saleIds = await contracts.transfer.getSalesByPharmacist(account);
       const saleList = [];
       let totalRev = 0;
@@ -100,15 +98,11 @@ export default function PharmacistDashboard() {
         totalRev += (Number(s.quantity) * Number(s.pricePerUnit));
       }
       setSales(saleList.reverse());
-      setStats({
-        items: pending.length,
-        stock: stockList.filter(i => Number(i.quantity) > 0).length,
-        revenue: totalRev
-      });
+      setStats({ items: pending.length, stock: stockList.filter(i => Number(i.quantity) > 0).length, revenue: totalRev });
 
     } catch (err) {
       console.error(err);
-      setActionMsg('❌ Error loading dashboard');
+      setActionMsg('❌ Sync Error');
     } finally {
       setLoading(false);
     }
@@ -120,12 +114,12 @@ export default function PharmacistDashboard() {
 
   const handleAccept = async (id) => {
     try {
-      setActionMsg('⏳ Receiving stock...');
+      setActionMsg('⏳ Receiving...');
       const tx = await contracts.transfer.acceptTransfer(id, "Received at Pharmacy");
       await tx.wait();
-      setActionMsg('✅ Stock added to inventory!');
+      setActionMsg('✅ Stock Added!');
       fetchData();
-    } catch (err) { setActionMsg('❌ Error receiving stock'); }
+    } catch (err) { setActionMsg('❌ Error'); }
   };
 
   const handleSell = async (e) => {
@@ -133,18 +127,11 @@ export default function PharmacistDashboard() {
     try {
       const batch = inventory.find(i => i.batchNumber === sellData.batchNumber);
       if (!batch) return;
-
       setActionMsg('⏳ Processing Sale...');
       const qty = window.BigInt(sellData.quantity);
       const price = window.BigInt(batch.price);
 
-      const tx = await contracts.transfer.sellToBuyer(
-        sellData.batchNumber,
-        qty,
-        price,
-        batch.currency,
-        `Sold to ${sellData.customerName}`
-      );
+      const tx = await contracts.transfer.sellToBuyer(sellData.batchNumber, qty, price, batch.currency, `Sold to ${sellData.customerName}`);
       await tx.wait();
 
       setLastInvoice({
@@ -162,17 +149,13 @@ export default function PharmacistDashboard() {
       setSellData({ batchNumber: '', quantity: '', customerName: '' });
       fetchData();
       setActiveTab('invoice');
-    } catch (err) { 
-      console.error(err);
-      setActionMsg('❌ ' + (err.reason || err.message)); 
-    }
+    } catch (err) { setActionMsg('❌ ' + (err.reason || 'Failed')); }
   };
 
   const printInvoice = () => {
-    const printContent = invoiceRef.current;
-    const WindowPrt = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');
-    WindowPrt.document.write('<html><head><title>Medicine Invoice</title><style>body{font-family:sans-serif;padding:40px;} .header{text-align:center;margin-bottom:40px;} .row{display:flex;justify-content:space-between;margin-bottom:10px;} .total{border-top:2px solid #000;padding-top:10px;margin-top:20px;font-weight:bold;font-size:1.2rem;} .footer{margin-top:50px;text-align:center;font-size:0.8rem;color:#666;}</style></head><body>');
-    WindowPrt.document.write(printContent.innerHTML);
+    const WindowPrt = window.open('', '', 'left=0,top=0,width=800,height=900');
+    WindowPrt.document.write('<html><head><title>Pharmacy Receipt</title><style>body{font-family:sans-serif;padding:40px;} .header{text-align:center;margin-bottom:40px;color:#10b981;} .total{border-top:2px solid #333;padding-top:10px;margin-top:20px;font-weight:bold;font-size:1.2rem;text-align:right;}</style></head><body>');
+    WindowPrt.document.write(invoiceRef.current.innerHTML);
     WindowPrt.document.write('</body></html>');
     WindowPrt.document.close();
     WindowPrt.focus();
@@ -185,256 +168,224 @@ export default function PharmacistDashboard() {
       {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
 
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
-        <div style={styles.sidebarBrand}><span style={{ color: '#ec4899' }}>MediChain</span> Phm</div>
+        <div style={styles.sidebarBrand}>
+          <span style={{ color: 'var(--accent-primary)' }}>MediChain</span>
+          <span style={styles.roleTag}>Pharmacist</span>
+        </div>
         <nav style={styles.nav}>
-          <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Overview" />
-          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="Pending Delivery" count={stats.items} />
-          <NavItem active={activeTab === 'stock'} onClick={() => setActiveTab('stock')} Icon={Icons.Stock} label="Available Stock" />
+          <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="POS Dashboard" />
+          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="Stock Deliveries" count={stats.items} />
+          <NavItem active={activeTab === 'stock'} onClick={() => setActiveTab('stock')} Icon={Icons.Stock} label="Medicine Inventory" />
           <div style={styles.navDivider}>Point of Sale</div>
-          <NavItem active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} Icon={Icons.Sell} label="Sell Medicine" />
-          <NavItem active={activeTab === 'sales'} onClick={() => setActiveTab('sales')} Icon={Icons.Receipt} label="Sales History" />
+          <NavItem active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} Icon={Icons.Sell} label="New Sale" />
+          <NavItem active={activeTab === 'sales'} onClick={() => setActiveTab('sales')} Icon={Icons.Receipt} label="Transaction History" />
           <div style={styles.navDivider}>Alerts</div>
           <NavItem active={activeTab === 'expired'} onClick={() => setActiveTab('expired')} Icon={Icons.Alert} label="Expired Items" />
         </nav>
+        <div style={styles.sidebarFooter}>
+           <button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
+        </div>
       </div>
 
       <div style={{ ...styles.main, marginLeft: isMobile ? '0' : '280px' }}>
         <header style={styles.header}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            {isMobile && <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.iconBtn}><Icons.Menu /></button>}
-            <h1 style={styles.headerTitle}>{activeTab.replace('-', ' ').toUpperCase()}</h1>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
-            <div style={styles.userProfile}>
-              <div style={styles.avatar}>{account?.slice(2, 4).toUpperCase()}</div>
-              {!isMobile && <span style={styles.userName}>Pharmacist</span>}
-            </div>
-          </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {isMobile && <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.iconBtn}><Icons.Menu /></button>}
+              <h1 style={styles.headerTitle}>{activeTab.replace('-', ' ').toUpperCase()}</h1>
+           </div>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
+              <div style={styles.userProfile}>
+                 <div style={styles.avatar}>{account?.slice(2,4).toUpperCase()}</div>
+                 {!isMobile && <span style={styles.userName}>Pharmacy Node</span>}
+              </div>
+           </div>
         </header>
 
-        <div style={styles.content}>
-          {loading ? (
-             <div style={styles.loadingContainer}>⌛ Syncing Pharmacy Records...</div>
-          ) : (
-            <>
-              {activeTab === 'overview' && (
-                <div style={styles.grid}>
-                  <StatCard title="Total Revenue" value={`${stats.revenue} PKR`} Icon={Icons.Receipt} color="#ec4899" />
-                  <StatCard title="Batches in Stock" value={stats.stock} Icon={Icons.Stock} color="#10b981" />
-                  <StatCard title="Pending Inbox" value={stats.items} Icon={Icons.Inbox} color="#3b82f6" />
-                </div>
-              )}
+        <div style={styles.content} className="animate-fade-in">
+           {loading ? (
+              <div style={styles.loadingContainer}>⌛ Syncing Records...</div>
+           ) : (
+             <>
+               {activeTab === 'overview' && (
+                 <div style={styles.statsGrid}>
+                   <StatCard title="Total Revenue" value={`${stats.revenue} PKR`} Icon={Icons.Receipt} color="#10b981" />
+                   <StatCard title="Stock Items" value={stats.stock} Icon={Icons.Stock} color="#3b82f6" />
+                   <StatCard title="Pending Inbound" value={stats.items} Icon={Icons.Inbox} color="#f59e0b" />
+                 </div>
+               )}
 
-              {activeTab === 'inbox' && (
-                <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Incoming Deliveries from Supplier</h3>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.table}>
-                      <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Supplier</th><th>Quantity</th><th>Date</th><th>Action</th></tr>
-                      </thead>
-                      <tbody>
-                        {inbox.map(req => (
-                          <tr key={req.id.toString()} style={styles.tableRow}>
-                            <td style={{fontWeight: 600}}>{req.batchNumber}</td>
-                            <td>{req.sender.slice(0,12)}...</td>
-                            <td>{req.quantity.toString()}</td>
-                            <td>{new Date(Number(req.createdAt)*1000).toLocaleDateString()}</td>
-                            <td><button style={styles.btnApprove} onClick={() => handleAccept(req.id)}>Accept</button></td>
-                          </tr>
-                        ))}
-                        {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No pending deliveries.</td></tr>}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'stock' && (
-                <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Current Pharmacy Stock</h3>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.table}>
-                      <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Product</th><th>In Stock</th><th>Unit Price</th><th>Status</th></tr>
-                      </thead>
-                      <tbody>
-                        {inventory.filter(i => Number(i.quantity) > 0 && i.status === 0).map(b => (
-                          <tr key={b.batchNumber} style={styles.tableRow}>
-                            <td style={{fontWeight: 600}}>{b.batchNumber}</td>
-                            <td>{b.productName}</td>
-                            <td style={{fontWeight: 700, color: '#10b981'}}>{b.quantity}</td>
-                            <td>{b.price} {b.currency}</td>
-                            <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>ACTIVE</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'sell' && (
-                <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Medicine Checkout</h3>
-                  <form onSubmit={handleSell} style={styles.formStack}>
-                    <div style={styles.formGroup}>
-                      <label style={styles.label}>Select Product from Stock</label>
-                      <select style={styles.input} value={sellData.batchNumber} onChange={e => setSellData({...sellData, batchNumber: e.target.value})} required>
-                        <option value="">-- Choose Medicine --</option>
-                        {inventory.filter(i => Number(i.quantity) > 0 && i.status === 0).map(i => (
-                          <option key={i.batchNumber} value={i.batchNumber}>{i.productName} ({i.quantity} units available) - {i.price} {i.currency}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={styles.formGroup}><label style={styles.label}>Quantity to Sell</label><input style={styles.input} type="number" value={sellData.quantity} onChange={e => setSellData({...sellData, quantity: e.target.value})} required/></div>
-                    <div style={styles.formGroup}><label style={styles.label}>Customer Name</label><input style={styles.input} placeholder="Enter Name" value={sellData.customerName} onChange={e => setSellData({...sellData, customerName: e.target.value})} required/></div>
-                    <button type="submit" style={styles.submitBtn}>Complete Sale & Generate Invoice</button>
-                  </form>
-                </div>
-              )}
-
-              {activeTab === 'invoice' && lastInvoice && (
-                <div style={styles.lightPanel}>
-                   <div ref={invoiceRef} style={{padding: '20px', background: '#fff', border: '1px solid #eee'}}>
-                      <div style={{textAlign: 'center', marginBottom: '30px'}}>
-                        <h2 style={{color: '#ec4899', margin: 0}}>MEDICHAIN PHARMACY</h2>
-                        <p style={{fontSize: '0.8rem', color: '#666'}}>Blockchain Verified Medicine Receipt</p>
-                      </div>
-                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '0.9rem'}}>
-                        <div>
-                          <strong>Customer:</strong> {lastInvoice.customer}<br/>
-                          <strong>Date:</strong> {lastInvoice.date}
-                        </div>
-                        <div>
-                          <strong>Receipt #:</strong> {Math.floor(Math.random()*100000)}<br/>
-                          <strong>Batch:</strong> {lastInvoice.batch}
-                        </div>
-                      </div>
-                      <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '20px'}}>
-                        <thead><tr style={{borderBottom: '2px solid #333', textAlign: 'left'}}><th style={{padding: '8px'}}>Item</th><th style={{padding: '8px'}}>Qty</th><th style={{padding: '8px'}}>Price</th><th style={{padding: '8px', textAlign: 'right'}}>Total</th></tr></thead>
+               {activeTab === 'inbox' && (
+                 <div className="glass-panel">
+                    <h3 style={styles.panelTitle}>Pending Stock Deliveries</h3>
+                    <div style={styles.tableWrapper}>
+                      <table style={styles.table}>
+                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Supplier</th><th>Quantity</th><th>Date</th><th>Action</th></tr></thead>
                         <tbody>
-                          <tr>
-                            <td style={{padding: '8px'}}>{lastInvoice.product}</td>
-                            <td style={{padding: '8px'}}>{lastInvoice.qty}</td>
-                            <td style={{padding: '8px'}}>{lastInvoice.price}</td>
-                            <td style={{padding: '8px', textAlign: 'right'}}>{lastInvoice.total} {lastInvoice.currency}</td>
-                          </tr>
+                          {inbox.map(req => (
+                            <tr key={req.id.toString()} style={styles.tableRow}>
+                              <td style={{fontWeight: 700}}>{req.batchNumber}</td>
+                              <td>{req.sender.slice(0,12)}...</td>
+                              <td>{req.quantity.toString()}</td>
+                              <td>{new Date(Number(req.createdAt)*1000).toLocaleDateString()}</td>
+                              <td><button className="btn btn-primary" style={{padding: '0.4rem 1rem', fontSize: '0.8rem'}} onClick={() => handleAccept(req.id)}>Accept Delivery</button></td>
+                            </tr>
+                          ))}
+                          {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No pending deliveries.</td></tr>}
                         </tbody>
                       </table>
-                      <div style={{textAlign: 'right', borderTop: '2px solid #333', paddingTop: '10px', fontSize: '1.2rem', fontWeight: 800}}>
-                        Grand Total: {lastInvoice.total} {lastInvoice.currency}
-                      </div>
-                      <div style={{marginTop: '40px', textAlign: 'center', fontSize: '0.75rem', color: '#888'}}>
-                        Thank you for your purchase!<br/>Scan the Batch QR code to verify medicine authenticity.
-                      </div>
-                   </div>
-                   <button onClick={printInvoice} style={{...styles.submitBtn, marginTop: '20px'}}>Print Invoice (PDF)</button>
-                </div>
-              )}
+                    </div>
+                 </div>
+               )}
 
-              {activeTab === 'sales' && (
-                <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Sales Transaction History</h3>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.table}>
-                      <thead style={styles.tableHeader}>
-                        <tr><th>Sale ID</th><th>Batch</th><th>Qty</th><th>Total Paid</th><th>Time</th></tr>
-                      </thead>
-                      <tbody>
-                        {sales.map(s => (
-                          <tr key={s.id} style={styles.tableRow}>
-                            <td>#{s.id}</td>
-                            <td>{s.batch}</td>
-                            <td>{s.quantity}</td>
-                            <td style={{fontWeight: 700}}>{s.total} PKR</td>
-                            <td>{new Date(s.date*1000).toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+               {activeTab === 'stock' && (
+                 <div className="glass-panel">
+                    <h3 style={styles.panelTitle}>Available Medicine Inventory</h3>
+                    <div style={styles.tableWrapper}>
+                      <table style={styles.table}>
+                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Price</th><th>Quantity</th><th>Status</th></tr></thead>
+                        <tbody>
+                          {inventory.filter(i => Number(i.quantity) > 0 && i.status === 0).map(b => (
+                            <tr key={b.batchNumber} style={styles.tableRow}>
+                              <td style={{fontWeight: 700}}>{b.batchNumber}</td>
+                              <td>{b.productName}</td>
+                              <td>{b.price} {b.currency}</td>
+                              <td style={{fontWeight: 700, color: '#10b981'}}>{b.quantity}</td>
+                              <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AVAILABLE</span></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                 </div>
+               )}
 
-              {activeTab === 'expired' && (
-                <div style={styles.lightPanel}>
-                  <h3 style={{...styles.panelTitle, color: '#ef4444'}}>Expired / Unsafe Inventory</h3>
-                  <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem'}}>These items must be removed from the shelf immediately.</p>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.table}>
-                      <thead style={styles.tableHeader}><tr><th>Batch #</th><th>Product</th><th>Remaining Qty</th><th>Expiry Date</th></tr></thead>
-                      <tbody>
-                        {inventory.filter(i => i.status === 1 || i.expiry * 1000 < Date.now()).map(b => (
-                          <tr key={b.batchNumber} style={styles.tableRow}>
-                            <td>{b.batchNumber}</td>
-                            <td>{b.productName}</td>
-                            <td>{b.quantity}</td>
-                            <td style={{color: '#ef4444'}}>{new Date(b.expiry*1000).toLocaleDateString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+               {activeTab === 'sell' && (
+                 <div className="glass-panel" style={{maxWidth: '600px'}}>
+                   <h3 style={styles.panelTitle}>New Customer Sale</h3>
+                   <form onSubmit={handleSell} style={styles.formStack}>
+                      <div style={styles.formGroup}><label style={styles.label}>Select Product</label>
+                        <select style={styles.input} value={sellData.batchNumber} onChange={e => setSellData({...sellData, batchNumber: e.target.value})} required>
+                          <option value="">-- Choose Stock --</option>
+                          {inventory.filter(i => Number(i.quantity) > 0 && i.status === 0).map(i => <option key={i.batchNumber} value={i.batchNumber}>{i.productName} ({i.quantity} units)</option>)}
+                        </select>
+                      </div>
+                      <div style={styles.formGroup}><label style={styles.label}>Quantity</label><input type="number" style={styles.input} value={sellData.quantity} onChange={e => setSellData({...sellData, quantity: e.target.value})} required /></div>
+                      <div style={styles.formGroup}><label style={styles.label}>Customer Name</label><input type="text" style={styles.input} placeholder="Full Name" value={sellData.customerName} onChange={e => setSellData({...sellData, customerName: e.target.value})} required /></div>
+                      <button type="submit" className="btn btn-primary" style={{width: '100%', marginTop: '1rem'}}>Process & Print Receipt</button>
+                   </form>
+                 </div>
+               )}
+
+               {activeTab === 'invoice' && lastInvoice && (
+                 <div className="glass-panel">
+                    <div ref={invoiceRef} style={{padding: '30px', background: 'white', border: '1px solid #e2e8f0'}}>
+                       <div style={{textAlign: 'center', marginBottom: '30px'}}><h2 style={{color: '#10b981', margin: 0}}>PHARMACY SALE RECEIPT</h2><p style={{fontSize: '0.8rem', color: '#64748b'}}>Blockchain Verified Transaction</p></div>
+                       <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '30px'}}>
+                          <div><strong>Customer:</strong> {lastInvoice.customer}<br/><strong>Date:</strong> {lastInvoice.date}</div>
+                          <div style={{textAlign: 'right'}}><strong>Receipt #:</strong> {Math.floor(Math.random()*100000)}<br/><strong>Batch:</strong> {lastInvoice.batch}</div>
+                       </div>
+                       <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                          <thead><tr style={{borderBottom: '2px solid #0f172a', textAlign: 'left'}}><th style={{padding: '8px'}}>Medicine Name</th><th>Qty</th><th>Unit Price</th><th style={{textAlign: 'right'}}>Total</th></tr></thead>
+                          <tbody><tr><td style={{padding: '12px 8px'}}>{lastInvoice.product}</td><td>{lastInvoice.qty}</td><td>{lastInvoice.price}</td><td style={{textAlign: 'right'}}>{lastInvoice.total} {lastInvoice.currency}</td></tr></tbody>
+                       </table>
+                       <div className="total">Grand Total: {lastInvoice.total} {lastInvoice.currency}</div>
+                    </div>
+                    <button onClick={printInvoice} className="btn btn-primary" style={{marginTop: '2rem'}}>Print Receipt</button>
+                 </div>
+               )}
+
+               {activeTab === 'sales' && (
+                 <div className="glass-panel">
+                    <h3 style={styles.panelTitle}>Past Sales Records</h3>
+                    <div style={styles.tableWrapper}>
+                      <table style={styles.table}>
+                        <thead><tr style={styles.tableHeader}><th>ID</th><th>Batch No</th><th>Quantity</th><th>Total Amount</th><th>Transaction Date</th></tr></thead>
+                        <tbody>
+                          {sales.map(s => (
+                            <tr key={s.id} style={styles.tableRow}>
+                              <td>#{s.id}</td><td>{s.batch}</td><td>{s.quantity}</td><td style={{fontWeight: 700}}>{s.total} PKR</td><td>{new Date(s.date*1000).toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                 </div>
+               )}
+
+               {activeTab === 'expired' && (
+                 <div className="glass-panel">
+                    <h3 style={{...styles.panelTitle, color: '#ef4444'}}>Flagged & Expired Inventory</h3>
+                    <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Items listed here must be quarantined and not sold to patients.</p>
+                    <div style={styles.tableWrapper}>
+                      <table style={styles.table}>
+                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Units</th><th>Expiry Date</th></tr></thead>
+                        <tbody>
+                          {inventory.filter(i => i.status === 1 || i.expiry * 1000 < Date.now()).map(b => (
+                            <tr key={b.batchNumber} style={styles.tableRow}>
+                              <td style={{fontWeight: 700}}>{b.batchNumber}</td><td>{b.productName}</td><td>{b.quantity}</td><td style={{color: '#ef4444'}}>{new Date(b.expiry*1000).toLocaleDateString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                 </div>
+               )}
+             </>
+           )}
         </div>
       </div>
     </div>
   );
 }
 
-const StatCard = ({ title, value, Icon, color }) => (
-  <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}>
-    <div style={{ ...styles.statIconContainer, color: color, background: `${color}15` }}><Icon /></div>
-    <div style={styles.statInfo}><div style={styles.statTitle}>{title}</div><div style={styles.statValue}>{value}</div></div>
-  </div>
-);
-
 const NavItem = ({ active, onClick, Icon, label, count }) => (
   <div onClick={onClick} style={{ ...styles.navItem, ...(active ? styles.navItemActive : {}) }}><Icon /><span style={{ marginLeft: '12px', flex: 1 }}>{label}</span>{count > 0 && <span style={styles.navCount}>{count}</span>}</div>
 );
 
+const StatCard = ({ title, value, Icon, color }) => (
+  <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}>
+    <div style={{ ...styles.statIconContainer, color: color, background: `${color}10` }}><Icon /></div>
+    <div><div style={styles.statTitle}>{title}</div><div style={styles.statValue}>{value}</div></div>
+  </div>
+);
+
 const styles = {
-  dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f1f5f9', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, overflow: 'hidden' },
-  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#ffffff', borderRight: '1px solid #e2e8f0', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '1.5rem 0' },
+  dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f8fafc', position: 'fixed', inset: 0, zIndex: 10 },
+  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#0f172a', display: 'flex', flexDirection: 'column', zIndex: 100, transition: 'left 0.3s ease' },
   sidebarOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 90 },
-  sidebarBrand: { fontSize: '1.5rem', fontWeight: 800, padding: '0 1.5rem 2rem', color: '#1e293b' },
-  nav: { padding: '0 0.75rem' },
-  navItem: { display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderRadius: '8px', cursor: 'pointer', color: '#64748b', fontWeight: 500, marginBottom: '4px' },
-  navItemActive: { background: '#fdf2f8', color: '#ec4899' },
-  navCount: { background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px' },
-  navDivider: { padding: '1.5rem 1rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' },
+  sidebarBrand: { padding: '2.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '4px' },
+  roleTag: { color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' },
+  nav: { flex: 1, padding: '0 1rem' },
+  navItem: { display: 'flex', alignItems: 'center', padding: '0.875rem 1.25rem', borderRadius: '10px', cursor: 'pointer', color: '#94a3b8', transition: 'all 0.2s ease', marginBottom: '4px' },
+  navItemActive: { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' },
+  navCount: { background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '99px', fontWeight: 700 },
+  navDivider: { padding: '1.5rem 1.25rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' },
+  sidebarFooter: { padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' },
+  logoutBtn: { width: '100%', padding: '0.75rem', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontSize: '0.9rem' },
   main: { flex: 1, height: '100vh', overflowY: 'auto' },
-  header: { height: '70px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
-  headerTitle: { fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', margin: 0 },
+  header: { height: '80px', background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
+  headerTitle: { fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 },
   iconBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' },
-  content: { padding: '2rem' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.5rem' },
-  statCard: { background: '#fff', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', gap: '1rem' },
-  statIconContainer: { width: '40px', height: '40px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  statTitle: { color: '#64748b', fontSize: '0.875rem' },
-  statValue: { fontSize: '1.5rem', fontWeight: 800, color: '#1e293b' },
-  lightPanel: { background: '#fff', padding: '2rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginTop: '2rem' },
-  panelTitle: { color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem' },
+  toast: { background: '#f0fdf4', color: '#059669', padding: '0.5rem 1.25rem', borderRadius: '99px', fontSize: '0.85rem', fontWeight: 600, border: '1px solid #d1fae5' },
+  userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  avatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
+  userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.95rem' },
+  content: { padding: '2.5rem' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' },
+  statCard: { background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1.25rem', alignItems: 'center' },
+  statIconContainer: { width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  statTitle: { color: '#64748b', fontSize: '0.85rem', fontWeight: 500 },
+  statValue: { fontSize: '1.75rem', fontWeight: 800, color: '#0f172a' },
+  panelTitle: { fontSize: '1.25rem', color: '#0f172a', marginBottom: '2rem', marginTop: 0 },
   tableWrapper: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', padding: '12px' },
-  tableRow: { borderBottom: '1px solid #f1f5f9', color: '#334155' },
-  badge: { padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', fontSize: '0.75rem' },
-  formStack: { display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '500px' },
+  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  tableRow: { borderBottom: '1px solid #f1f5f9' },
+  badge: { padding: '4px 12px', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700 },
+  formStack: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
   formGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  label: { fontSize: '0.85rem', fontWeight: 600, color: '#475569' },
-  input: { padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem' },
-  submitBtn: { padding: '1rem', background: '#ec4899', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', marginTop: '1rem' },
-  btnApprove: { background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' },
-  btnReject: { background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' },
-  toast: { background: '#fdf2f8', color: '#9d174d', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem', border: '1px solid #fbcfe8' },
-  loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' },
-  userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
-  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#ec4899', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' },
-  userName: { color: '#1e293b', fontWeight: 600, fontSize: '0.9rem' }
+  label: { fontSize: '0.85rem', fontWeight: 700, color: '#475569' },
+  input: { padding: '0.875rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: '0.95rem' },
+  loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' }
 };

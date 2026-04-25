@@ -1,77 +1,70 @@
 import React, { useState } from 'react';
 import { useWeb3 } from '../context/Web3Context';
-
-const Icons = {
-  User: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-  )
-};
+import { useNavigate } from 'react-router-dom';
 
 export default function Register() {
-  const { account, contracts } = useWeb3();
-  const [roleToRequest, setRoleToRequest] = useState('2');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [location, setLocation] = useState('');
-  
+  const { contracts, account, status } = useWeb3();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ name: '', role: '2' }); // Default to Manufacturer
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!contracts.registry) {
-      setIsError(true);
-      setMessage('Registry contract not connected.');
+    if (!account) {
+      setError('Please connect your wallet first.');
       return;
     }
+    setLoading(true);
+    setError('');
 
     try {
-      setLoading(true);
-      setIsError(false);
-      setMessage('⌛ Transaction pending... Please confirm in MetaMask.');
-      
-      // Contract signature: requestRegistration(Role _role, string _name, string _email, string _location)
-      const tx = await contracts.registry.requestRegistration(
-        roleToRequest, 
-        name, 
-        email, 
-        location
-      );
-      
+      const tx = await contracts.registry.registerEntity(formData.name, parseInt(formData.role));
       await tx.wait();
-      setIsError(false);
-      setMessage('✅ Registration submitted! Wait for admin approval.');
-      setName(''); setEmail(''); setLocation('');
+      alert('Registration successful! Please wait for Admin approval.');
+      navigate('/');
     } catch (err) {
       console.error(err);
-      setIsError(true);
-      setMessage(err.reason || 'Failed to submit registration.');
+      setError(err.reason || 'Registration failed. You might already be registered.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <div style={styles.iconCircle}><Icons.User /></div>
-          <h2 style={styles.title}>Partner Registration</h2>
-          <p style={styles.subtitle}>Fill in your details to join the MediChain ecosystem.</p>
-        </div>
-
-        {message && (
-          <div style={{...styles.alert, ...(isError ? styles.alertError : styles.alertSuccess)}}>
-            {message}
+    <div className="page-content animate-fade-in" style={styles.page}>
+      <div className="container" style={styles.container}>
+        <div className="glass-panel" style={styles.card}>
+          <div style={styles.header}>
+            <div style={styles.icon}>🏢</div>
+            <h1 style={styles.title}>Join the <span className="gradient-text">Network</span></h1>
+            <p style={styles.subtitle}>Register your entity to participate in the secure medicine supply chain.</p>
           </div>
-        )}
 
-        <form onSubmit={handleRegister} style={styles.form}>
-          <div style={styles.grid}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Select Role</label>
-              <select style={styles.input} value={roleToRequest} onChange={e => setRoleToRequest(e.target.value)}>
+          {error && <div style={styles.error}>{error}</div>}
+
+          <form onSubmit={handleSubmit} style={styles.form}>
+            <div className="form-group">
+              <label className="form-label">Organization Name</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="e.g. Pharma Global Inc."
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                style={styles.input}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Entity Role</label>
+              <select 
+                className="form-input"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                style={styles.input}
+              >
                 <option value="2">Manufacturer</option>
                 <option value="3">Distributor</option>
                 <option value="4">Supplier</option>
@@ -79,49 +72,122 @@ export default function Register() {
               </select>
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Full Entity Name</label>
-              <input style={styles.input} placeholder="e.g. HealthCare Solutions" value={name} onChange={e => setName(e.target.value)} required />
+            <div style={styles.walletInfo}>
+              <div style={styles.walletLabel}>Connected Wallet</div>
+              <div style={styles.walletAddr}>
+                {account ? `${account.substring(0, 12)}...${account.substring(account.length - 8)}` : 'No Wallet Connected'}
+              </div>
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email Address</label>
-              <input style={styles.input} type="email" placeholder="contact@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
+            <button 
+              type="submit" 
+              className="btn btn-primary" 
+              disabled={loading || status !== 'connected'}
+              style={styles.submitBtn}
+            >
+              {loading ? 'Processing Registration...' : 'Submit for Approval'}
+            </button>
+          </form>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Physical Location</label>
-              <input style={styles.input} placeholder="City, Country" value={location} onChange={e => setLocation(e.target.value)} required />
-            </div>
-          </div>
-
-          <button type="submit" disabled={loading || !account} style={{...styles.submitBtn, ...(loading ? styles.btnDisabled : {})}}>
-            {loading ? 'Processing...' : 'Submit Request'}
-          </button>
-
-          {!account && <p style={styles.warnText}>⚠️ Connect wallet to submit.</p>}
-        </form>
+          <p style={styles.footer}>
+            Note: All registrations require verification by a system administrator before access is granted.
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' },
-  card: { background: '#fff', width: '100%', maxWidth: '650px', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', padding: '2.5rem' },
-  header: { textAlign: 'center', marginBottom: '2rem' },
-  iconCircle: { width: '50px', height: '50px', borderRadius: '50%', background: '#f1fdf9', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' },
-  title: { fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.5rem 0' },
-  subtitle: { color: '#64748b', fontSize: '0.9rem' },
-  alert: { padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' },
-  alertError: { background: '#fef2f2', color: '#ef4444', border: '1px solid #fee2e2' },
-  alertSuccess: { background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' },
-  form: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  label: { fontSize: '0.85rem', fontWeight: 600, color: '#475569' },
-  input: { padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem', outline: 'none' },
-  submitBtn: { padding: '1rem', borderRadius: '8px', background: '#10b981', color: '#fff', border: 'none', fontSize: '1rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', marginTop: '1rem' },
-  btnDisabled: { opacity: 0.6, cursor: 'not-allowed' },
-  warnText: { textAlign: 'center', color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem' }
+  page: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    background: 'radial-gradient(circle at top right, rgba(16, 185, 129, 0.05), transparent)',
+  },
+  container: {
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  card: {
+    maxWidth: '500px',
+    width: '100%',
+    padding: '3rem 2.5rem',
+    borderRadius: '24px',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.05)',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '2.5rem',
+  },
+  icon: {
+    fontSize: '3rem',
+    marginBottom: '1rem',
+  },
+  title: {
+    fontSize: '2rem',
+    marginBottom: '0.5rem',
+  },
+  subtitle: {
+    color: 'var(--text-secondary)',
+    fontSize: '0.95rem',
+    lineHeight: 1.5,
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+  },
+  input: {
+    padding: '0.875rem',
+    borderRadius: '12px',
+    background: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    color: '#0f172a',
+    fontSize: '1rem',
+  },
+  walletInfo: {
+    background: '#f0fdf4',
+    padding: '1rem',
+    borderRadius: '12px',
+    border: '1px solid #d1fae5',
+    marginBottom: '0.5rem',
+  },
+  walletLabel: {
+    fontSize: '0.75rem',
+    fontWeight: 700,
+    color: '#059669',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: '4px',
+  },
+  walletAddr: {
+    fontSize: '0.9rem',
+    fontFamily: 'monospace',
+    color: '#047857',
+    wordBreak: 'break-all',
+  },
+  submitBtn: {
+    padding: '1rem',
+    fontSize: '1.1rem',
+    marginTop: '1rem',
+  },
+  error: {
+    background: '#fef2f2',
+    color: '#ef4444',
+    padding: '1rem',
+    borderRadius: '12px',
+    border: '1px solid #fee2e2',
+    marginBottom: '1.5rem',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    textAlign: 'center',
+  },
+  footer: {
+    marginTop: '2rem',
+    textAlign: 'center',
+    fontSize: '0.85rem',
+    color: '#94a3b8',
+    lineHeight: 1.5,
+  }
 };
