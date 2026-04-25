@@ -1,7 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { useWeb3 } from '../context/Web3Context';
 
 export default function Home() {
+  const { account, role } = useWeb3();
+
+  // Automatic redirect if already logged in
+  if (account && role) {
+    if (role === 'Admin') return <Navigate to="/admin" replace />;
+    if (role === 'Manufacturer') return <Navigate to="/manufacturer" replace />;
+    if (role === 'Distributor') return <Navigate to="/distributor" replace />;
+  }
+
   return (
     <div className="container page-content animate-fade-in">
       <div style={styles.hero}>
