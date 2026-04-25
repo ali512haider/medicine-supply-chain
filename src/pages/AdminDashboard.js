@@ -118,7 +118,17 @@ export default function AdminDashboard() {
       for (let bid of batchIds) {
         try {
           const b = await contracts.product.getBatch(bid);
-          if (b.exists) batches.push(b);
+          const s = await contracts.product.getBatchStatus(bid);
+          // Convert to object and inject live status
+          const bObj = {
+             batchNumber: b.batchNumber,
+             productName: b.productName,
+             manufacturer: b.manufacturer,
+             expiryDate: b.expiryDate,
+             status: s, // Use live status from contract
+             recallReason: b.recallReason
+          };
+          batches.push(bObj);
         } catch (err) { }
       }
 
@@ -153,6 +163,18 @@ export default function AdminDashboard() {
     } catch (err) { setActionMsg('❌ Error'); }
   };
 
+  const handleReject = async (address) => {
+    const reason = licenseInputs[address]?.trim();
+    if (!reason) { setActionMsg('❌ Reason required for rejection'); return; }
+    try {
+      setActionMsg('⏳ Rejecting...');
+      const tx = await contracts.registry.rejectEntity(address, reason);
+      await tx.wait();
+      setActionMsg('✅ Rejected');
+      fetchData();
+    } catch (err) { setActionMsg('❌ Error'); }
+  };
+
   const handleNavItemClick = (tab) => {
     setActiveTab(tab);
     if (isMobile) setSidebarOpen(false);
@@ -160,13 +182,60 @@ export default function AdminDashboard() {
 
   // --- RENDERING ---
 
+  const renderBatches = (filterType) => {
+    let filtered = allBatches;
+    const now = Math.floor(Date.now() / 1000);
+
+    if (filterType === 'expired') {
+      filtered = allBatches.filter(b => Number(b.status) === 1 || Number(b.expiryDate) < now);
+    } else if (filterType === 'recalled') {
+      filtered = allBatches.filter(b => Number(b.status) === 2);
+    }
+
+    return (
+      <div style={styles.lightPanel}>
+        <h3 style={{ textTransform: 'capitalize', color: '#127358ff' }}>{filterType} Batches</h3>
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead style={styles.tableHeader}>
+              <tr><th>Batch #</th><th>Product Name</th><th>Manufacturer</th><th>Expiry Date</th>{filterType==='recalled' && <th>Reason</th>}<th>Status</th></tr>
+            </thead>
+            <tbody>
+              {filtered.map(b => (
+                <tr key={b.batchNumber} style={styles.tableRow}>
+                  <td style={{ fontWeight: 600 }}>{b.batchNumber}</td>
+                  <td>{b.productName}</td>
+                  <td>{b.manufacturer}</td>
+                  <td>{new Date(Number(b.expiryDate) * 1000).toLocaleDateString()}</td>
+                  {filterType==='recalled' && <td style={{fontSize: '0.8rem', fontStyle: 'italic'}}>{b.recallReason || 'N/A'}</td>}
+                  <td>
+                    <span style={{
+                      ...styles.badge,
+                      background: filterType === 'expired' ? '#fef2f2' : '#fff7ed',
+                      color: filterType === 'expired' ? '#ef4444' : '#f97316',
+                      border: `1px solid ${filterType === 'expired' ? '#fee2e2' : '#ffedd5'}`
+                    }}>
+                      {filterType.toUpperCase()}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={filterType==='recalled' ? "6" : "5"} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No {filterType} products found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   const renderOverview = () => (
     <div style={styles.grid}>
       <StatCard title="Manufacturers" value={stats.mfr} Icon={Icons.Manufacturers} color="#10b981" />
       <StatCard title="Distributors" value={stats.dist} Icon={Icons.Distributors} color="#3b82f6" />
       <StatCard title="Suppliers" value={stats.supp} Icon={Icons.Suppliers} color="#f59e0b" />
       <StatCard title="Pharmacists" value={stats.pharm} Icon={Icons.Pharmacists} color="#8b5cf6" />
-      <StatCard title="Total Batches" value={stats.batches} Icon={Icons.Batches} color="#06b6d4" />
       <StatCard title="Pending Requests" value={pendingRequests.length} Icon={Icons.Bell} color="#ef4444" />
     </div>
   );
@@ -238,23 +307,41 @@ export default function AdminDashboard() {
               {/* Other views remain same but use lightPanel style */}
               {activeTab === 'approvals' && (
                 <div style={styles.lightPanel}>
-                  <h3>Pending Registration Requests</h3>
+                  <h3 style={{ textTransform: 'capitalize', color: '#127358ff' }}>Pending Registration Requests</h3>
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                       <thead style={styles.tableHeader}>
-                        <tr><th>Entity Name</th><th>Requested Role</th><th>License Assignment</th><th>Actions</th></tr>
+                        <tr>
+                          <th>Entity Name</th>
+                          <th>Role</th>
+                          <th>License / Reject Reason</th>
+                          <th>Actions</th>
+                        </tr>
                       </thead>
                       <tbody>
                         {pendingRequests.map(r => (
                           <tr key={r.address} style={styles.tableRow}>
-                            <td>{r.name}</td>
-                            <td><span style={styles.badge}>{ROLE_NAMES[r.role]}</span></td>
-                            <td><input style={styles.inlineInput} placeholder="Assign ID" onChange={e => setLicenseInputs({ ...licenseInputs, [r.address]: e.target.value })} /></td>
                             <td>
-                              <button style={styles.btnApprove} onClick={() => handleApprove(r.address)}>Approve</button>
+                              <div style={{fontWeight: 600}}>{r.name}</div>
+                              <div style={{fontSize: '0.75rem', color: '#64748b'}}>{r.address.slice(0,12)}...</div>
+                            </td>
+                            <td><span style={styles.badge}>{ROLE_NAMES[r.role]}</span></td>
+                            <td>
+                              <input 
+                                style={styles.inlineInput} 
+                                placeholder="License ID or Reject Reason" 
+                                onChange={e => setLicenseInputs({ ...licenseInputs, [r.address]: e.target.value })} 
+                              />
+                            </td>
+                            <td>
+                              <div style={{display: 'flex', gap: '0.5rem'}}>
+                                <button style={styles.btnApprove} onClick={() => handleApprove(r.address)}>Approve</button>
+                                <button style={styles.btnReject} onClick={() => handleReject(r.address)}>Reject</button>
+                              </div>
                             </td>
                           </tr>
                         ))}
+                        {pendingRequests.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No pending requests.</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -263,7 +350,7 @@ export default function AdminDashboard() {
               {/* Dynamic Entity Lists */}
               {['manufacturers', 'distributors', 'suppliers', 'pharmacists'].includes(activeTab) && (
                 <div style={styles.lightPanel}>
-                  <h3 style={{ textTransform: 'capitalize' }}>{activeTab} List</h3>
+                  <h3 style={{ textTransform: 'capitalize', color: '#127358ff' }}>{activeTab} List</h3>
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                       <thead style={styles.tableHeader}>
@@ -286,13 +373,14 @@ export default function AdminDashboard() {
               )}
               {activeTab === 'trace' && (
                 <div style={styles.lightPanel}>
-                  <h3>Trace Product Lifecycle</h3>
+                  <h3 style={{ color: '#127358ff' }}>Trace Product Lifecycle</h3>
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                     <input className="form-input" style={{ flex: 1, background: '#fff', color: '#000' }} placeholder="Enter Batch Number (e.g. BATCH-001)" onChange={e => setTraceBatch(e.target.value)} />
                     <button className="btn btn-primary" onClick={() => navigate(`/verify?batch=${traceBatch}`)}>Trace Now</button>
                   </div>
                 </div>
               )}
+              {(activeTab === 'expired' || activeTab === 'recalled') && renderBatches(activeTab)}
             </>
           )}
         </div>
@@ -300,6 +388,9 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+
+
 
 const StatCard = ({ title, value, Icon, color }) => (
   <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}>
@@ -440,7 +531,9 @@ const styles = {
   tableRow: { borderBottom: '1px solid #f1f5f9', color: '#334155' },
   badge: { padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', fontSize: '0.75rem' },
   inlineInput: { padding: '4px 8px', border: '1px solid #e2e8f0', borderRadius: '4px', width: '100px' },
-  btnApprove: { background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' },
+  btnApprove: { background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 },
+  btnReject: { background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 },
+  docLink: { color: '#3b82f6', fontSize: '0.7rem', textDecoration: 'none', border: '1px solid #3b82f6', padding: '2px 6px', borderRadius: '4px' },
   userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
   avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' },
   toast: { background: '#f0fdf4', color: '#166534', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem', border: '1px solid #bbf7d0' },

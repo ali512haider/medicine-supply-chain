@@ -47,6 +47,7 @@ contract RegistryContract {
         string          email;
         string          location;
         string          licenseNumber;   // assigned by admin on approval
+        string          rejectionReason; // Reason for rejection
         uint256         registeredAt;    // block.timestamp of registration request
         uint256         approvedAt;      // block.timestamp of admin approval (0 if not yet)
         bool            exists;          // guard for mapping lookup
@@ -166,6 +167,7 @@ contract RegistryContract {
             email:          "",
             location:       "",
             licenseNumber:  "ADMIN-001",
+            rejectionReason:"",
             registeredAt:   block.timestamp,
             approvedAt:     block.timestamp,
             exists:         true
@@ -215,7 +217,8 @@ contract RegistryContract {
             name:           _name,
             email:          _email,
             location:       _location,
-            licenseNumber:  "",           // assigned by admin later
+            licenseNumber:  "",           
+            rejectionReason:"",
             registeredAt:   block.timestamp,
             approvedAt:     0,
             exists:         true
@@ -263,7 +266,7 @@ contract RegistryContract {
     }
 
     /// @notice Reject a pending registration request.
-    function rejectEntity(address _entity)
+    function rejectEntity(address _entity, string calldata _reason)
         external
         onlyAdmin
         entityExists(_entity)
@@ -276,6 +279,7 @@ contract RegistryContract {
         );
 
         e.status = ApprovalStatus.Rejected;
+        e.rejectionReason = _reason;
         _removeFromPending(_entity);
 
         emit EntityRejected(_entity, msg.sender, block.timestamp);
@@ -400,6 +404,7 @@ contract RegistryContract {
                 email:          "",
                 location:       "",
                 licenseNumber:  "ADMIN-TRANSFER",
+                rejectionReason:"",
                 registeredAt:   block.timestamp,
                 approvedAt:     block.timestamp,
                 exists:         true
