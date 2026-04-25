@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Web3Provider, useWeb3 } from './context/Web3Context';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -48,7 +48,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
-import { useLocation } from 'react-router-dom';
 
 function AppContent() {
   const location = useLocation();
