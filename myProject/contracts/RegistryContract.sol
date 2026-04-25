@@ -557,4 +557,7 @@ contract RegistryContract {
             }
         }
     }
+    function getAllEntities() external view returns (address[] memory) {
+        return allRegistered;
+    }
 }

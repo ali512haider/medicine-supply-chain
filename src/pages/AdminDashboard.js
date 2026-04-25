@@ -1,155 +1,471 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
+import { ethers } from 'ethers';
 
 const ROLE_NAMES = { 1: 'Admin', 2: 'Manufacturer', 3: 'Distributor', 4: 'Supplier', 5: 'Pharmacist' };
 
 export default function AdminDashboard() {
   const { contracts, account } = useWeb3();
-  const [pendingRequests, setPendingRequests] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  
+  // Data State
+  const [stats, setStats] = useState({ mfr: 0, dist: 0, supp: 0, pharm: 0, batches: 0 });
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [entities, setEntities] = useState({ manufacturers: [], distributors: [], suppliers: [], pharmacists: [] });
+  const [allBatches, setAllBatches] = useState([]);
   const [licenseInputs, setLicenseInputs] = useState({});
   const [actionMsg, setActionMsg] = useState('');
+  const [traceBatch, setTraceBatch] = useState('');
 
-  const fetchRequests = useCallback(async () => {
-    if (!contracts.registry) return;
+  // Fetch Stats & Basic Data
+  const fetchData = useCallback(async () => {
+    if (!contracts.registry || !contracts.product) return;
     setLoading(true);
     try {
-      // ✅ FIX 1: Correct event name is 'RegistrationRequested', not 'EntityRegistered'
-      const filter = contracts.registry.filters.RegistrationRequested();
-      const events = await contracts.registry.queryFilter(filter);
+      // 1. Fetch All Registration Events
+      const regFilter = contracts.registry.filters.RegistrationRequested();
+      const regEvents = await contracts.registry.queryFilter(regFilter);
+      
+      const pending = [];
+      const mfrs = [];
+      const dists = [];
+      const supps = [];
+      const pharms = [];
 
-      const requests = [];
-      for (let event of events) {
-        const addr = event.args.applicant || event.args[0];
+      for (let event of regEvents) {
+        const addr = event.args.applicant;
         const entity = await contracts.registry.getEntity(addr);
-        // ✅ FIX 2: Pending status is 1, not 0 (0 = None, 1 = Pending)
-        if (Number(entity.status) === 1) {
-          requests.push({
-            address: addr,
-            role: Number(entity.role),
-            name: entity.name,
-            email: entity.email,
-            location: entity.location,
-          });
+        const data = {
+          address: addr,
+          role: Number(entity.role),
+          name: entity.name,
+          email: entity.email,
+          location: entity.location,
+          status: Number(entity.status),
+          license: entity.licenseNumber
+        };
+
+        if (data.status === 1) pending.push(data); // Pending
+        else if (data.status === 2) { // Approved
+          if (data.role === 2) mfrs.push(data);
+          else if (data.role === 3) dists.push(data);
+          else if (data.role === 4) supps.push(data);
+          else if (data.role === 5) pharms.push(data);
         }
       }
-      setPendingRequests(requests);
+
+      // 2. Fetch All Batches
+      const batchFilter = contracts.product.filters.BatchAdded();
+      const batchEvents = await contracts.product.queryFilter(batchFilter);
+      const batches = [];
+      for (let event of batchEvents) {
+        const b = await contracts.product.getBatch(event.args.batchNumber);
+        batches.push(b);
+      }
+
+      setPendingRequests(pending);
+      setEntities({ manufacturers: mfrs, distributors: dists, suppliers: supps, pharmacists: pharms });
+      setAllBatches(batches);
+      setStats({
+        mfr: mfrs.length,
+        dist: dists.length,
+        supp: supps.length,
+        pharm: pharms.length,
+        batches: batches.length
+      });
+
     } catch (err) {
-      console.error('Error fetching pending requests:', err);
+      console.error('Admin Fetch Error:', err);
     } finally {
       setLoading(false);
     }
-  }, [contracts.registry]);
+  }, [contracts.registry, contracts.product]);
 
   useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
+    fetchData();
+  }, [fetchData]);
 
   const handleApprove = async (address) => {
-    // ✅ FIX 3: approveEntity requires (address, licenseNumber) — admin must supply license
-    const licenseNo = licenseInputs[address]?.trim();
-    if (!licenseNo) {
-      setActionMsg(`❌ Please enter a license number for ${address.slice(0, 8)}... before approving.`);
-      return;
-    }
+    const lic = licenseInputs[address]?.trim();
+    if (!lic) { setActionMsg('❌ License required'); return; }
     try {
-      setActionMsg('⏳ Submitting approval...');
-      const tx = await contracts.registry.approveEntity(address, licenseNo);
+      setActionMsg('⏳ Approving...');
+      const tx = await contracts.registry.approveEntity(address, lic);
       await tx.wait();
-      setPendingRequests(prev => prev.filter(req => req.address !== address));
-      setActionMsg(`✅ Approved successfully! License: ${licenseNo}`);
-    } catch (err) {
-      console.error(err);
-      setActionMsg('❌ Approval failed: ' + (err.reason || err.message));
-    }
+      setActionMsg('✅ Approved');
+      fetchData();
+    } catch (err) { setActionMsg('❌ Error: ' + err.message); }
   };
 
   const handleReject = async (address) => {
     try {
-      setActionMsg('⏳ Submitting rejection...');
+      setActionMsg('⏳ Rejecting...');
       const tx = await contracts.registry.rejectEntity(address);
       await tx.wait();
-      setPendingRequests(prev => prev.filter(req => req.address !== address));
-      setActionMsg('✅ Entity rejected.');
-    } catch (err) {
-      console.error(err);
-      setActionMsg('❌ Rejection failed: ' + (err.reason || err.message));
-    }
+      setActionMsg('✅ Rejected');
+      fetchData();
+    } catch (err) { setActionMsg('❌ Error: ' + err.message); }
+  };
+
+  // --- RENDERING HELPERS ---
+
+  const renderOverview = () => (
+    <div style={styles.grid}>
+      <StatCard title="Manufacturers" value={stats.mfr} icon="🏭" color="#10b981" />
+      <StatCard title="Distributors" value={stats.dist} icon="🚚" color="#3b82f6" />
+      <StatCard title="Suppliers" value={stats.supp} icon="📦" color="#f59e0b" />
+      <StatCard title="Pharmacists" value={stats.pharm} icon="💊" color="#8b5cf6" />
+      <StatCard title="Total Batches" value={stats.batches} icon="🔢" color="#06b6d4" />
+      <StatCard title="Pending Requests" value={pendingRequests.length} icon="🔔" color="#ef4444" />
+    </div>
+  );
+
+  const renderApprovals = () => (
+    <div className="glass-panel" style={styles.lightPanel}>
+      <h2 style={{color: '#1e293b'}}>Pending Registration Requests</h2>
+      {pendingRequests.length === 0 ? <p>No pending requests.</p> : (
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr style={styles.tableHeader}>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Location</th>
+                <th>License Input</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingRequests.map(req => (
+                <tr key={req.address} style={styles.tableRow}>
+                  <td>{req.name}</td>
+                  <td><span style={styles.badge}>{ROLE_NAMES[req.role]}</span></td>
+                  <td>{req.location}</td>
+                  <td>
+                    <input 
+                      style={styles.inlineInput} 
+                      placeholder="License #" 
+                      value={licenseInputs[req.address] || ''}
+                      onChange={e => setLicenseInputs({...licenseInputs, [req.address]: e.target.value})}
+                    />
+                  </td>
+                  <td>
+                    <button onClick={() => handleApprove(req.address)} style={styles.btnApprove}>Approve</button>
+                    <button onClick={() => handleReject(req.address)} style={styles.btnReject}>Reject</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderEntities = (type) => {
+    const list = entities[type];
+    return (
+      <div className="glass-panel" style={styles.lightPanel}>
+        <h2 style={{textTransform: 'capitalize', color: '#1e293b'}}>{type}</h2>
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr style={styles.tableHeader}>
+                <th>Name</th>
+                <th>Address</th>
+                <th>License</th>
+                <th>Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map(e => (
+                <tr key={e.address} style={styles.tableRow}>
+                  <td>{e.name}</td>
+                  <td style={{fontSize: '0.8rem', fontFamily: 'monospace'}}>{e.address.slice(0,10)}...</td>
+                  <td>{e.license}</td>
+                  <td>{e.location}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBatches = (filterType) => {
+    let filtered = allBatches;
+    if (filterType === 'expired') filtered = allBatches.filter(b => Number(b.status) === 1);
+    if (filterType === 'recalled') filtered = allBatches.filter(b => Number(b.status) === 2);
+
+    return (
+      <div className="glass-panel" style={styles.lightPanel}>
+        <h2 style={{textTransform: 'capitalize', color: '#1e293b'}}>{filterType} Batches</h2>
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr style={styles.tableHeader}>
+                <th>Batch #</th>
+                <th>Product</th>
+                <th>Manufacturer</th>
+                <th>Status</th>
+                <th>Expiry</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(b => (
+                <tr key={b.batchNumber} style={styles.tableRow}>
+                  <td>{b.batchNumber}</td>
+                  <td>{b.productName}</td>
+                  <td>{b.manufacturer}</td>
+                  <td><span style={{...styles.badge, background: b.status.toString() === '0' ? '#10b981' : '#ef4444'}}>{Number(b.status) === 0 ? 'Active' : (Number(b.status) === 1 ? 'Expired' : 'Recalled')}</span></td>
+                  <td>{new Date(Number(b.expiryDate)*1000).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="container page-content animate-fade-in">
-      <h1 className="gradient-text">Admin Dashboard</h1>
-      <p style={{ color: 'var(--text-secondary)' }}>Review and approve registration requests from entities.</p>
+    <div style={styles.adminWrapper}>
+      {/* Sidebar */}
+      <div style={styles.sidebar}>
+        <div style={styles.sidebarBrand}>MediChain Admin</div>
+        <nav style={styles.nav}>
+          <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon="📊" label="Overview" />
+          <NavItem active={activeTab === 'approvals'} onClick={() => setActiveTab('approvals')} icon="🔔" label="Approvals" />
+          <NavItem active={activeTab === 'manufacturers'} onClick={() => setActiveTab('manufacturers')} icon="🏭" label="Manufacturers" />
+          <NavItem active={activeTab === 'distributors'} onClick={() => setActiveTab('distributors')} icon="🚚" label="Distributors" />
+          <NavItem active={activeTab === 'suppliers'} onClick={() => setActiveTab('suppliers')} icon="📦" label="Suppliers" />
+          <NavItem active={activeTab === 'pharmacists'} onClick={() => setActiveTab('pharmacists')} icon="💊" label="Pharmacists" />
+          <NavItem active={activeTab === 'expired'} onClick={() => setActiveTab('expired')} icon="⌛" label="Expired Goods" />
+          <NavItem active={activeTab === 'recalled'} onClick={() => setActiveTab('recalled')} icon="⚠️" label="Recalled Batches" />
+          <NavItem active={activeTab === 'trace'} onClick={() => setActiveTab('trace')} icon="🔍" label="Trace Product" />
+        </nav>
+      </div>
 
-      {actionMsg && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          background: actionMsg.startsWith('❌') ? 'rgba(239,68,68,0.1)' : 'rgba(59,130,246,0.1)',
-          color: actionMsg.startsWith('❌') ? 'var(--accent-danger)' : 'var(--accent-primary)',
-          borderRadius: '8px',
-          marginBottom: '1.5rem',
-          fontSize: '0.9rem'
-        }}>
-          {actionMsg}
-        </div>
-      )}
-
-      <div className="glass-panel" style={{ marginTop: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ margin: 0 }}>Pending Approvals</h2>
-          <button className="btn btn-primary" onClick={fetchRequests} style={{ fontSize: '0.85rem', padding: '0.4rem 1rem' }}>
-            🔄 Refresh
-          </button>
-        </div>
-
-        {loading ? (
-          <p style={{ color: 'var(--text-secondary)' }}>Loading requests...</p>
-        ) : pendingRequests.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)' }}>✅ No pending requests found.</p>
-        ) : (
-          <div style={{ display: 'grid', gap: '1.25rem' }}>
-            {pendingRequests.map(req => (
-              <div key={req.address} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  <div>
-                    <h3 style={{ margin: '0 0 0.25rem 0' }}>{req.name}</h3>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      <strong>Role:</strong> {ROLE_NAMES[req.role]} &nbsp;|&nbsp;
-                      <strong>Email:</strong> {req.email} &nbsp;|&nbsp;
-                      <strong>Location:</strong> {req.location}
-                    </p>
-                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                      {req.address}
-                    </p>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Assign License No. (e.g. MFR-001)"
-                    style={{ flex: 1, minWidth: '180px', padding: '0.5rem 0.75rem', fontSize: '0.875rem' }}
-                    value={licenseInputs[req.address] || ''}
-                    onChange={e => setLicenseInputs(prev => ({ ...prev, [req.address]: e.target.value }))}
-                  />
-                  <button className="btn btn-primary" onClick={() => handleApprove(req.address)}>
-                    ✅ Approve
-                  </button>
-                  <button
-                    className="btn"
-                    style={{ background: 'rgba(239,68,68,0.15)', color: 'var(--accent-danger)', border: '1px solid var(--accent-danger)' }}
-                    onClick={() => handleReject(req.address)}
-                  >
-                    ❌ Reject
-                  </button>
-                </div>
-              </div>
-            ))}
+      {/* Main Content */}
+      <div style={styles.main}>
+        <header style={styles.header}>
+          <div>
+            <h1 style={{margin: 0, color: '#1e293b', fontSize: '1.5rem'}}>Administrator Panel</h1>
+            <p style={{margin: 0, color: '#64748b', fontSize: '0.875rem'}}>Welcome back, {account?.slice(0,10)}...</p>
           </div>
-        )}
+          {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
+        </header>
+
+        <div style={styles.content}>
+          {loading ? <div style={{textAlign: 'center', padding: '3rem'}}>Loading dashboard data...</div> : (
+            <>
+              {activeTab === 'overview' && renderOverview()}
+              {activeTab === 'approvals' && renderApprovals()}
+              {activeTab === 'manufacturers' && renderEntities('manufacturers')}
+              {activeTab === 'distributors' && renderEntities('distributors')}
+              {activeTab === 'suppliers' && renderEntities('suppliers')}
+              {activeTab === 'pharmacists' && renderEntities('pharmacists')}
+              {activeTab === 'expired' && renderBatches('expired')}
+              {activeTab === 'recalled' && renderBatches('recalled')}
+              {activeTab === 'trace' && (
+                <div className="glass-panel" style={styles.lightPanel}>
+                  <h2 style={{color: '#1e293b'}}>Trace Medicine Batch</h2>
+                  <div style={{display: 'flex', gap: '1rem', marginTop: '1.5rem'}}>
+                    <input 
+                      className="form-input" 
+                      style={{...styles.inlineInput, width: '300px', background: '#fff', color: '#000'}} 
+                      placeholder="Enter Batch Number..." 
+                      value={traceBatch}
+                      onChange={e => setTraceBatch(e.target.value)}
+                    />
+                    <button className="btn btn-primary" onClick={() => window.location.href=`/verify?batch=${traceBatch}`}>
+                      🔍 Trace Journey
+                    </button>
+                  </div>
+                  <p style={{marginTop: '1rem', fontSize: '0.9rem', color: '#64748b'}}>
+                    This will take you to the public verification page with advanced tracing details.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
+
+const StatCard = ({ title, value, icon, color }) => (
+  <div style={{...styles.statCard, borderLeft: `4px solid ${color}`}}>
+    <div style={styles.statIcon}>{icon}</div>
+    <div style={styles.statInfo}>
+      <div style={styles.statTitle}>{title}</div>
+      <div style={styles.statValue}>{value}</div>
+    </div>
+  </div>
+);
+
+const NavItem = ({ active, onClick, icon, label }) => (
+  <div onClick={onClick} style={{...styles.navItem, ...(active ? styles.navItemActive : {})}}>
+    <span style={{marginRight: '0.75rem'}}>{icon}</span>
+    {label}
+  </div>
+);
+
+const styles = {
+  adminWrapper: {
+    display: 'flex',
+    minHeight: '100vh',
+    background: '#f8fafc', // Professional light gray background
+    color: '#334155',
+    fontFamily: 'inherit',
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    zIndex: 2000, // Cover the main app for admin
+  },
+  sidebar: {
+    width: '260px',
+    background: '#ffffff',
+    borderRight: '1px solid #e2e8f0',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '1.5rem 0',
+  },
+  sidebarBrand: {
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    padding: '0 1.5rem 2rem 1.5rem',
+    color: '#10b981', // Professional green
+  },
+  nav: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+  },
+  navItem: {
+    padding: '0.75rem 1.5rem',
+    cursor: 'pointer',
+    fontSize: '0.925rem',
+    fontWeight: 500,
+    color: '#64748b',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  navItemActive: {
+    background: 'rgba(16, 185, 129, 0.1)',
+    color: '#10b981',
+    borderRight: '3px solid #10b981',
+  },
+  main: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    overflowY: 'auto',
+  },
+  header: {
+    height: '80px',
+    background: '#ffffff',
+    borderBottom: '1px solid #e2e8f0',
+    padding: '0 2rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'sticky',
+    top: 0,
+    zIndex: 10,
+  },
+  content: {
+    padding: '2rem',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: '1.5rem',
+  },
+  statCard: {
+    background: '#ffffff',
+    padding: '1.5rem',
+    borderRadius: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  statIcon: {
+    fontSize: '2rem',
+  },
+  statTitle: {
+    fontSize: '0.875rem',
+    color: '#64748b',
+  },
+  statValue: {
+    fontSize: '1.5rem',
+    fontWeight: 700,
+    color: '#1e293b',
+  },
+  lightPanel: {
+    background: '#ffffff',
+    border: '1px solid #e2e8f0',
+    color: '#334155',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+  },
+  tableWrapper: {
+    overflowX: 'auto',
+    marginTop: '1.5rem',
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+  },
+  tableHeader: {
+    background: '#f1f5f9',
+    textAlign: 'left',
+    color: '#475569',
+    fontSize: '0.875rem',
+  },
+  tableRow: {
+    borderBottom: '1px solid #f1f5f9',
+    fontSize: '0.9rem',
+  },
+  badge: {
+    padding: '0.2rem 0.6rem',
+    borderRadius: '999px',
+    background: '#e2e8f0',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+  },
+  inlineInput: {
+    padding: '0.4rem 0.6rem',
+    borderRadius: '4px',
+    border: '1px solid #cbd5e1',
+    width: '120px',
+  },
+  btnApprove: {
+    background: '#10b981',
+    color: 'white',
+    border: 'none',
+    padding: '0.4rem 0.8rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    marginRight: '0.5rem',
+  },
+  btnReject: {
+    background: '#ef4444',
+    color: 'white',
+    border: 'none',
+    padding: '0.4rem 0.8rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  toast: {
+    padding: '0.5rem 1rem',
+    background: '#f0fdf4',
+    border: '1px solid #bbf7d0',
+    color: '#166534',
+    borderRadius: '6px',
+    fontSize: '0.875rem',
+  }
+};

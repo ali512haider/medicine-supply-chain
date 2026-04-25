@@ -895,4 +895,7 @@ contract ProductContract {
     {
         return batches[_batchNumber].exists;
     }
+    function getAllBatches() external view returns (string[] memory) {
+        return allBatchNumbers;
+    }
 }
