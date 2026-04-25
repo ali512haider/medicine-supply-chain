@@ -1,10 +1,19 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 
 export default function Navbar() {
   const { account, role, status, connectWallet, disconnectWallet } = useWeb3();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const getDashboardRoute = () => {
     switch (role) {
@@ -17,39 +26,89 @@ export default function Navbar() {
     }
   };
 
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'Trace Medicine', path: '/verify' },
+    { name: 'About Us', path: '/about' },
+    { name: 'Contact', path: '/contact' },
+  ];
+
   return (
-    <nav style={styles.navbar}>
-      <div style={styles.navContainer} className="container">
+    <nav style={{
+      ...styles.navbar,
+      background: scrolled ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
+      boxShadow: scrolled ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+      borderBottom: scrolled ? '1px solid #e2e8f0' : 'none'
+    }}>
+      <div className="container" style={styles.navContainer}>
+        {/* Logo */}
         <Link to="/" style={styles.logo}>
-          <span className="gradient-text" style={{ fontWeight: 700, fontSize: '1.5rem' }}>MediChain</span>
+          <span style={styles.logoIcon}>💊</span>
+          <span style={styles.logoText}>MediChain</span>
         </Link>
 
-        <div style={styles.navLinks}>
-          <Link to="/verify" style={styles.link}>Verify Product</Link>
-          {account && role !== 'None' && (
-            <Link to={getDashboardRoute()} style={styles.link}>Dashboard</Link>
-          )}
+        {/* Desktop Links */}
+        <div style={styles.desktopNav}>
+          {navLinks.map(link => (
+            <Link 
+              key={link.name} 
+              to={link.path} 
+              style={{
+                ...styles.navLink,
+                color: location.pathname === link.path ? 'var(--accent-primary)' : 'var(--text-primary)'
+              }}
+            >
+              {link.name}
+              {location.pathname === link.path && <div style={styles.activeIndicator} />}
+            </Link>
+          ))}
         </div>
 
-        <div style={styles.auth}>
+        {/* Auth Actions */}
+        <div style={styles.authGroup}>
           {status === 'connected' && account ? (
-            <div style={styles.accountInfo}>
-              <span style={styles.roleBadge}>{role}</span>
-              <div style={styles.walletDropdown} onClick={disconnectWallet}>
-                {`${account.substring(0, 6)}...${account.substring(account.length - 4)}`}
+            <div style={styles.userInfo}>
+              <Link to={getDashboardRoute()} className="btn btn-primary" style={styles.dashboardBtn}>
+                Dashboard
+              </Link>
+              <div style={styles.accountBadge} onClick={disconnectWallet}>
+                <div style={styles.avatar}>{account.slice(2, 4).toUpperCase()}</div>
+                <span className="hide-mobile" style={styles.accountAddr}>
+                  {account.substring(0, 6)}...{account.substring(account.length - 4)}
+                </span>
               </div>
             </div>
           ) : (
-            <button 
-              className="btn btn-primary" 
-              onClick={connectWallet}
-              disabled={status === 'connecting'}
-            >
-              {status === 'connecting' ? 'Connecting...' : 'Connect Wallet'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button onClick={connectWallet} className="btn btn-outline" style={{ border: 'none' }}>
+                Login
+              </button>
+              <Link to="/register" className="btn btn-primary">
+                Register
+              </Link>
+            </div>
           )}
+          
+          {/* Mobile Menu Toggle */}
+          <button style={styles.menuToggle} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div style={styles.mobileMenu}>
+          {navLinks.map(link => (
+            <Link key={link.name} to={link.path} onClick={() => setMobileMenuOpen(false)} style={styles.mobileNavLink}>
+              {link.name}
+            </Link>
+          ))}
+          {!account && (
+             <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={styles.mobileNavLink}>Register Now</Link>
+          )}
+        </div>
+      )}
     </nav>
   );
 }
@@ -60,13 +119,11 @@ const styles = {
     top: 0,
     left: 0,
     right: 0,
-    height: '80px',
-    background: 'rgba(15, 23, 42, 0.8)',
-    backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-    zIndex: 1000,
+    height: 'var(--header-height)',
     display: 'flex',
     alignItems: 'center',
+    zIndex: 1000,
+    transition: 'all 0.3s ease',
   },
   navContainer: {
     display: 'flex',
@@ -75,47 +132,111 @@ const styles = {
     width: '100%',
   },
   logo: {
-    textDecoration: 'none',
-  },
-  navLinks: {
     display: 'flex',
-    gap: '2rem',
     alignItems: 'center',
-  },
-  link: {
-    color: 'var(--text-secondary)',
+    gap: '0.5rem',
     textDecoration: 'none',
-    fontWeight: 500,
+  },
+  logoIcon: {
+    fontSize: '1.5rem',
+  },
+  logoText: {
+    fontSize: '1.5rem',
+    fontWeight: 800,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+  },
+  desktopNav: {
+    display: 'flex',
+    gap: '2.5rem',
+    alignItems: 'center',
+    '@media (max-width: 900px)': { display: 'none' }
+  },
+  navLink: {
+    textDecoration: 'none',
+    fontSize: '0.95rem',
+    fontWeight: 600,
+    position: 'relative',
     transition: 'color 0.2s ease',
   },
-  auth: {
-    display: 'flex',
-    alignItems: 'center',
+  activeIndicator: {
+    position: 'absolute',
+    bottom: '-4px',
+    left: 0,
+    right: 0,
+    height: '2px',
+    background: 'var(--accent-primary)',
+    borderRadius: '2px',
   },
-  accountInfo: {
+  authGroup: {
     display: 'flex',
     alignItems: 'center',
     gap: '1rem',
-    background: 'rgba(255, 255, 255, 0.05)',
-    padding: '0.5rem 1rem',
-    borderRadius: '999px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
   },
-  roleBadge: {
-    fontSize: '0.75rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+  userInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  dashboardBtn: {
+    fontSize: '0.85rem',
+    padding: '0.5rem 1.25rem',
+  },
+  accountBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '4px',
+    paddingRight: '12px',
+    background: '#f1f5f9',
+    borderRadius: '99px',
+    cursor: 'pointer',
+    border: '1px solid #e2e8f0',
+  },
+  avatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    background: 'var(--accent-primary)',
     color: 'white',
-    padding: '0.25rem 0.5rem',
-    borderRadius: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.75rem',
     fontWeight: 700,
   },
-  walletDropdown: {
-    fontSize: '0.875rem',
+  accountAddr: {
+    fontSize: '0.85rem',
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    color: '#475569',
+  },
+  menuToggle: {
+    display: 'none',
+    background: 'none',
+    border: 'none',
     cursor: 'pointer',
-    fontFamily: 'monospace',
+    color: '#0f172a',
+    padding: '0.5rem',
+    '@media (max-width: 900px)': { display: 'block' }
+  },
+  mobileMenu: {
+    position: 'absolute',
+    top: 'var(--header-height)',
+    left: 0,
+    right: 0,
+    background: 'white',
+    borderBottom: '1px solid #e2e8f0',
+    padding: '1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+  },
+  mobileNavLink: {
+    textDecoration: 'none',
+    color: '#0f172a',
+    fontWeight: 600,
+    padding: '0.5rem',
+    borderBottom: '1px solid #f1f5f9',
   }
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,9 +13,6 @@ const Icons = {
   Transfer: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg>
   ),
-  Suppliers: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-  ),
   Inventory: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
   ),
@@ -24,6 +21,9 @@ const Icons = {
   ),
   UserPlus: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+  ),
+  Receipt: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 17.5V6.5"></path></svg>
   )
 };
 
@@ -33,6 +33,7 @@ export default function DistributorDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const invoiceRef = useRef();
 
   // Data State
   const [inbox, setInbox] = useState([]);
@@ -45,6 +46,7 @@ export default function DistributorDashboard() {
   // Form States
   const [transferData, setTransferData] = useState({ batchNumber: '', supplier: '', quantity: '', price: '0' });
   const [suppToAdd, setSuppToAdd] = useState('');
+  const [lastInvoice, setLastInvoice] = useState(null);
 
   // Handle Resize
   useEffect(() => {
@@ -61,13 +63,11 @@ export default function DistributorDashboard() {
     if (!contracts.transfer || !account) return;
     setLoading(true);
     try {
-      // 1. Fetch Inbox (Pending Incoming)
+      // 1. Fetch Inbox
       const pendingRequests = await contracts.transfer.getMyPendingInbox();
       setInbox(pendingRequests);
       
-      // 2. Fetch My Inventory (Available Stock)
-      // Note: We need a way to get batches held by this distributor.
-      // In ProductContract, we have getAvailableStockBatches(address).
+      // 2. Fetch My Inventory
       const stockIds = await contracts.product.getAvailableStockBatches(account);
       const stockList = [];
       for (let id of stockIds) {
@@ -78,7 +78,9 @@ export default function DistributorDashboard() {
             batchNumber: b.batchNumber,
             productName: b.productName,
             quantity: qty.toString(),
-            manufacturer: b.manufacturer
+            manufacturer: b.manufacturer,
+            price: b.costPerUnit.toString(),
+            currency: b.currency
           });
         }
       }
@@ -92,7 +94,7 @@ export default function DistributorDashboard() {
         sent: sentCount.length
       });
 
-      // 4. Fetch All Approved Suppliers (Global)
+      // 4. Fetch All Approved Suppliers
       const allAddrs = await contracts.registry.getAllRegistered();
       const supps = [];
       for (let addr of allAddrs) {
@@ -157,24 +159,54 @@ export default function DistributorDashboard() {
     e.preventDefault();
     try {
       setActionMsg('⏳ Initiating Transfer...');
-      const qty = window.BigInt(transferData.quantity || 0);
-      const price = window.BigInt(transferData.price || 0);
+      const batch = inventory.find(i => i.batchNumber === transferData.batchNumber);
+      const supplier = allSuppliers.find(s => s.address === transferData.supplier);
       
-      // Direction 1 = DIST_TO_SUPP
+      const qty = window.BigInt(transferData.quantity || 0);
+      const price = window.BigInt(transferData.price || batch.price);
+      
       const tx = await contracts.transfer.requestTransfer(
         1, 
         transferData.batchNumber,
         transferData.supplier,
         qty,
         price,
-        "PKR",
+        batch.currency,
         `Shipment from distributor ${account.slice(0,6)}`
       );
       await tx.wait();
+
+      setLastInvoice({
+        type: 'Delivery Note / B2B Invoice',
+        sender: 'Distributor',
+        receiver: supplier.name,
+        receiverAddr: transferData.supplier,
+        product: batch.productName,
+        batch: batch.batchNumber,
+        qty: transferData.quantity,
+        price: price.toString(),
+        total: Number(transferData.quantity) * Number(price),
+        currency: batch.currency,
+        date: new Date().toLocaleString()
+      });
+
       setActionMsg('✅ Transfer Requested!');
       setTransferData({ batchNumber: '', supplier: '', quantity: '', price: '0' });
       fetchData();
+      setActiveTab('invoice');
     } catch (err) { setActionMsg('❌ ' + (err.reason || err.message)); }
+  };
+
+  const printInvoice = () => {
+    const printContent = invoiceRef.current;
+    const WindowPrt = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');
+    WindowPrt.document.write('<html><head><title>B2B Invoice</title><style>body{font-family:sans-serif;padding:40px;} .header{text-align:center;margin-bottom:40px;} .row{display:flex;justify-content:space-between;margin-bottom:10px;} .total{border-top:2px solid #000;padding-top:10px;margin-top:20px;font-weight:bold;font-size:1.2rem;} .footer{margin-top:50px;text-align:center;font-size:0.8rem;color:#666;}</style></head><body>');
+    WindowPrt.document.write(printContent.innerHTML);
+    WindowPrt.document.write('</body></html>');
+    WindowPrt.document.close();
+    WindowPrt.focus();
+    WindowPrt.print();
+    WindowPrt.close();
   };
 
   return (
@@ -190,6 +222,7 @@ export default function DistributorDashboard() {
           <div style={styles.navDivider}>Distribution</div>
           <NavItem active={activeTab === 'suppliers'} onClick={() => setActiveTab('suppliers')} Icon={Icons.UserPlus} label="My Suppliers" />
           <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Transfer Stock" />
+          {lastInvoice && <NavItem active={activeTab === 'invoice'} onClick={() => setActiveTab('invoice')} Icon={Icons.Receipt} label="Last Invoice" />}
         </nav>
       </div>
 
@@ -210,7 +243,7 @@ export default function DistributorDashboard() {
 
         <div style={styles.content}>
           {loading ? (
-             <div style={styles.loadingContainer}>⌛ Syncing Blockchain Data...</div>
+             <div style={styles.loadingContainer}>⌛ Syncing...</div>
           ) : (
             <>
               {activeTab === 'overview' && (
@@ -244,7 +277,6 @@ export default function DistributorDashboard() {
                             </td>
                           </tr>
                         ))}
-                        {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No incoming shipments.</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -257,18 +289,17 @@ export default function DistributorDashboard() {
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                       <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Product</th><th>Manufacturer</th><th>In Stock</th></tr>
+                        <tr><th>Batch #</th><th>Product</th><th>Original Price</th><th>In Stock</th></tr>
                       </thead>
                       <tbody>
                         {inventory.map(b => (
                           <tr key={b.batchNumber} style={styles.tableRow}>
                             <td style={{fontWeight: 600}}>{b.batchNumber}</td>
                             <td>{b.productName}</td>
-                            <td>{b.manufacturer}</td>
+                            <td>{b.price} {b.currency}</td>
                             <td style={{fontWeight: 700, color: '#10b981'}}>{b.quantity} units</td>
                           </tr>
                         ))}
-                        {inventory.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>Your inventory is empty.</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -278,10 +309,9 @@ export default function DistributorDashboard() {
               {activeTab === 'suppliers' && (
                 <div style={styles.lightPanel}>
                   <h3 style={styles.panelTitle}>Manage My Suppliers</h3>
-                  <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Whitelisted suppliers can receive medicine shipments from you.</p>
                   <div style={{display: 'flex', gap: '1rem', marginBottom: '2rem'}}>
                     <select style={{...styles.input, flex: 1}} value={suppToAdd} onChange={e => setSuppToAdd(e.target.value)}>
-                      <option value="">-- Choose Supplier to Add --</option>
+                      <option value="">-- Choose Supplier --</option>
                       {allSuppliers.filter(s => !myWhitelistedSuppliers.includes(s.address.toLowerCase())).map(s => (
                         <option key={s.address} value={s.address}>{s.name} ({s.address.slice(0,10)}...)</option>
                       ))}
@@ -294,9 +324,7 @@ export default function DistributorDashboard() {
                       <tbody>
                         {allSuppliers.filter(s => myWhitelistedSuppliers.includes(s.address.toLowerCase())).map(s => (
                           <tr key={s.address} style={styles.tableRow}>
-                            <td>{s.name}</td>
-                            <td>{s.address}</td>
-                            <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AUTHORIZED</span></td>
+                            <td>{s.name}</td><td>{s.address}</td><td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AUTHORIZED</span></td>
                           </tr>
                         ))}
                       </tbody>
@@ -310,26 +338,66 @@ export default function DistributorDashboard() {
                   <h3 style={styles.panelTitle}>Initiate Transfer to Supplier</h3>
                   <form onSubmit={handleTransfer} style={styles.formStack}>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Select Batch from Stock</label>
+                      <label style={styles.label}>Select Batch</label>
                       <select style={styles.input} value={transferData.batchNumber} onChange={e => setTransferData({...transferData, batchNumber: e.target.value})} required>
-                        <option value="">-- Select Available Batch --</option>
+                        <option value="">-- Select Batch --</option>
                         {inventory.map(b => (
                           <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.quantity} available)</option>
                         ))}
                       </select>
                     </div>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Receiver Supplier</label>
+                      <label style={styles.label}>Target Supplier</label>
                       <select style={styles.input} value={transferData.supplier} onChange={e => setTransferData({...transferData, supplier: e.target.value})} required>
-                        <option value="">-- Select Whitelisted Supplier --</option>
+                        <option value="">-- Select Supplier --</option>
                         {allSuppliers.filter(s => myWhitelistedSuppliers.includes(s.address.toLowerCase())).map(s => (
                           <option key={s.address} value={s.address}>{s.name}</option>
                         ))}
                       </select>
                     </div>
                     <div style={styles.formGroup}><label style={styles.label}>Quantity</label><input style={styles.input} type="number" value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required/></div>
-                    <button type="submit" style={styles.submitBtn}>Send Stock to Supplier</button>
+                    <div style={styles.formGroup}><label style={styles.label}>Custom Transfer Price (Optional)</label><input style={styles.input} type="number" value={transferData.price} onChange={e => setTransferData({...transferData, price: e.target.value})} placeholder="0 for default"/></div>
+                    <button type="submit" style={styles.submitBtn}>Send Stock & Generate Invoice</button>
                   </form>
+                </div>
+              )}
+
+              {activeTab === 'invoice' && lastInvoice && (
+                <div style={styles.lightPanel}>
+                   <div ref={invoiceRef} style={{padding: '30px', background: '#fff', border: '1px solid #ddd'}}>
+                      <div style={{textAlign: 'center', marginBottom: '30px'}}>
+                        <h2 style={{color: '#3b82f6', margin: 0}}>MEDICHAIN B2B INVOICE</h2>
+                        <p style={{fontSize: '0.8rem', color: '#666'}}>Supply Chain Transfer Document</p>
+                      </div>
+                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '0.9rem'}}>
+                        <div>
+                          <strong>From:</strong> {lastInvoice.sender} ({account.slice(0,10)}...)<br/>
+                          <strong>To:</strong> {lastInvoice.receiver} ({lastInvoice.receiverAddr.slice(0,10)}...)
+                        </div>
+                        <div style={{textAlign: 'right'}}>
+                          <strong>Date:</strong> {lastInvoice.date}<br/>
+                          <strong>Batch:</strong> {lastInvoice.batch}
+                        </div>
+                      </div>
+                      <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '20px'}}>
+                        <thead><tr style={{borderBottom: '2px solid #333', textAlign: 'left'}}><th style={{padding: '8px'}}>Medicine Name</th><th style={{padding: '8px'}}>Qty</th><th style={{padding: '8px'}}>Unit Price</th><th style={{padding: '8px', textAlign: 'right'}}>Total</th></tr></thead>
+                        <tbody>
+                          <tr>
+                            <td style={{padding: '8px'}}>{lastInvoice.product}</td>
+                            <td style={{padding: '8px'}}>{lastInvoice.qty}</td>
+                            <td style={{padding: '8px'}}>{lastInvoice.price}</td>
+                            <td style={{padding: '8px', textAlign: 'right'}}>{lastInvoice.total} {lastInvoice.currency}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div style={{textAlign: 'right', borderTop: '2px solid #333', paddingTop: '10px', fontSize: '1.2rem', fontWeight: 800}}>
+                        Grand Total: {lastInvoice.total} {lastInvoice.currency}
+                      </div>
+                      <div style={{marginTop: '40px', textAlign: 'center', fontSize: '0.75rem', color: '#888'}}>
+                        This is a blockchain-verified delivery note. No signature required.
+                      </div>
+                   </div>
+                   <button onClick={printInvoice} style={{...styles.submitBtn, marginTop: '20px'}}>Print / Save as PDF</button>
                 </div>
               )}
             </>
@@ -375,7 +443,7 @@ const styles = {
   panelTitle: { color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem' },
   tableWrapper: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.8rem' },
+  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', padding: '12px' },
   tableRow: { borderBottom: '1px solid #f1f5f9', color: '#334155' },
   badge: { padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', fontSize: '0.75rem' },
   formStack: { display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '500px' },

@@ -9,6 +9,7 @@ import ManufacturerDashboard from './pages/ManufacturerDashboard';
 import DistributorDashboard from './pages/DistributorDashboard';
 import SupplierDashboard from './pages/SupplierDashboard';
 import VerifyProduct from './pages/VerifyProduct';
+import PharmacistDashboard from './pages/PharmacistDashboard';
 import './App.css';
 
 // Protected Route Component
@@ -44,61 +45,61 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/verify" element={<VerifyProduct />} />
-        
-        <Route 
-          path="/register" 
+
+        <Route
+          path="/register"
           element={
             <ProtectedRoute>
               <Register />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/admin" 
+
+        <Route
+          path="/admin"
           element={
             <ProtectedRoute allowedRoles={['Admin']}>
               <AdminDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        
-        <Route 
-          path="/manufacturer" 
+
+        <Route
+          path="/manufacturer"
           element={
             <ProtectedRoute allowedRoles={['Manufacturer']}>
               <ManufacturerDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
 
-        <Route 
-          path="/distributor" 
+        <Route
+          path="/distributor"
           element={
             <ProtectedRoute allowedRoles={['Distributor']}>
               <DistributorDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
 
-        <Route 
-          path="/supplier" 
+        <Route
+          path="/supplier"
           element={
             <ProtectedRoute allowedRoles={['Supplier']}>
               <SupplierDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
 
-        <Route 
-          path="/pharmacist" 
+        <Route
+          path="/pharmacist"
           element={
             <ProtectedRoute allowedRoles={['Pharmacist']}>
               <PharmacistDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

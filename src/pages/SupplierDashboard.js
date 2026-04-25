@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,9 +13,6 @@ const Icons = {
   Transfer: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg>
   ),
-  Pharmacists: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2V4a2 2 0 0 0-2.2-1.7ZM7 21h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z"></path><path d="M12 7v6M9 10h6"></path></svg>
-  ),
   Inventory: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
   ),
@@ -24,6 +21,9 @@ const Icons = {
   ),
   UserPlus: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+  ),
+  Receipt: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 17.5V6.5"></path></svg>
   )
 };
 
@@ -33,6 +33,7 @@ export default function SupplierDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const invoiceRef = useRef();
 
   // Data State
   const [inbox, setInbox] = useState([]);
@@ -45,6 +46,7 @@ export default function SupplierDashboard() {
   // Form States
   const [transferData, setTransferData] = useState({ batchNumber: '', pharmacist: '', quantity: '', price: '0' });
   const [pharmToAdd, setPharmToAdd] = useState('');
+  const [lastInvoice, setLastInvoice] = useState(null);
 
   // Handle Resize
   useEffect(() => {
@@ -61,11 +63,11 @@ export default function SupplierDashboard() {
     if (!contracts.transfer || !account) return;
     setLoading(true);
     try {
-      // 1. Fetch Inbox (Pending Incoming from Distributor)
+      // 1. Fetch Inbox
       const pendingRequests = await contracts.transfer.getMyPendingInbox();
       setInbox(pendingRequests);
       
-      // 2. Fetch My Inventory (Available Stock)
+      // 2. Fetch Inventory
       const stockIds = await contracts.product.getAvailableStockBatches(account);
       const stockList = [];
       for (let id of stockIds) {
@@ -76,7 +78,9 @@ export default function SupplierDashboard() {
             batchNumber: b.batchNumber,
             productName: b.productName,
             quantity: qty.toString(),
-            manufacturer: b.manufacturer
+            manufacturer: b.manufacturer,
+            price: b.costPerUnit.toString(),
+            currency: b.currency
           });
         }
       }
@@ -90,7 +94,7 @@ export default function SupplierDashboard() {
         sent: sentCount.length
       });
 
-      // 4. Fetch All Approved Pharmacists (Global)
+      // 4. Fetch All Approved Pharmacists
       const allAddrs = await contracts.registry.getAllRegistered();
       const pharms = [];
       for (let addr of allAddrs) {
@@ -142,37 +146,67 @@ export default function SupplierDashboard() {
   const handleAddPharmacist = async () => {
     if (!pharmToAdd) return;
     try {
-      setActionMsg('⏳ Adding Pharmacist...');
+      setActionMsg('⏳ Authorizing...');
       const tx = await contracts.transfer.addPharmacist(pharmToAdd);
       await tx.wait();
-      setActionMsg('✅ Pharmacist Added!');
+      setActionMsg('✅ Pharmacist Authorized!');
       setPharmToAdd('');
       fetchData();
-    } catch (err) { setActionMsg('❌ Failed to add pharmacist'); }
+    } catch (err) { setActionMsg('❌ Authorization Failed'); }
   };
 
   const handleTransfer = async (e) => {
     e.preventDefault();
     try {
-      setActionMsg('⏳ Initiating Transfer...');
-      const qty = window.BigInt(transferData.quantity || 0);
-      const price = window.BigInt(transferData.price || 0);
+      setActionMsg('⏳ Shipping...');
+      const batch = inventory.find(i => i.batchNumber === transferData.batchNumber);
+      const pharmacist = allPharmacists.find(p => p.address === transferData.pharmacist);
       
-      // Direction 2 = SUPP_TO_PHARM
+      const qty = window.BigInt(transferData.quantity || 0);
+      const price = window.BigInt(transferData.price || batch.price);
+      
       const tx = await contracts.transfer.requestTransfer(
         2, 
         transferData.batchNumber,
         transferData.pharmacist,
         qty,
         price,
-        "PKR",
-        `Shipment from supplier ${account.slice(0,6)}`
+        batch.currency,
+        `Dispatch from supplier ${account.slice(0,6)}`
       );
       await tx.wait();
-      setActionMsg('✅ Transfer Requested!');
+
+      setLastInvoice({
+        type: 'Warehouse Dispatch Note',
+        sender: 'Supplier',
+        receiver: pharmacist.name,
+        receiverAddr: transferData.pharmacist,
+        product: batch.productName,
+        batch: batch.batchNumber,
+        qty: transferData.quantity,
+        price: price.toString(),
+        total: Number(transferData.quantity) * Number(price),
+        currency: batch.currency,
+        date: new Date().toLocaleString()
+      });
+
+      setActionMsg('✅ Shipment Requested!');
       setTransferData({ batchNumber: '', pharmacist: '', quantity: '', price: '0' });
       fetchData();
+      setActiveTab('invoice');
     } catch (err) { setActionMsg('❌ ' + (err.reason || err.message)); }
+  };
+
+  const printInvoice = () => {
+    const printContent = invoiceRef.current;
+    const WindowPrt = window.open('', '', 'left=0,top=0,width=800,height=900,toolbar=0,scrollbars=0,status=0');
+    WindowPrt.document.write('<html><head><title>Supplier Invoice</title><style>body{font-family:sans-serif;padding:40px;} .header{text-align:center;margin-bottom:40px;} .row{display:flex;justify-content:space-between;margin-bottom:10px;} .total{border-top:2px solid #000;padding-top:10px;margin-top:20px;font-weight:bold;font-size:1.2rem;} .footer{margin-top:50px;text-align:center;font-size:0.8rem;color:#666;}</style></head><body>');
+    WindowPrt.document.write(printContent.innerHTML);
+    WindowPrt.document.write('</body></html>');
+    WindowPrt.document.close();
+    WindowPrt.focus();
+    WindowPrt.print();
+    WindowPrt.close();
   };
 
   return (
@@ -183,11 +217,12 @@ export default function SupplierDashboard() {
         <div style={styles.sidebarBrand}><span style={{ color: '#8b5cf6' }}>MediChain</span> Supp</div>
         <nav style={styles.nav}>
           <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Overview" />
-          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="From Distributor" count={stats.incoming} />
-          <NavItem active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} Icon={Icons.Inventory} label="Warehouse Stock" />
-          <div style={styles.navDivider}>Supply Chain</div>
+          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="Incoming Stock" count={stats.incoming} />
+          <NavItem active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} Icon={Icons.Inventory} label="Warehouse" />
+          <div style={styles.navDivider}>Partners</div>
           <NavItem active={activeTab === 'pharmacists'} onClick={() => setActiveTab('pharmacists')} Icon={Icons.UserPlus} label="My Pharmacists" />
-          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Ship to Pharmacy" />
+          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Dispatch Items" />
+          {lastInvoice && <NavItem active={activeTab === 'invoice'} onClick={() => setActiveTab('invoice')} Icon={Icons.Receipt} label="Latest Note" />}
         </nav>
       </div>
 
@@ -208,44 +243,14 @@ export default function SupplierDashboard() {
 
         <div style={styles.content}>
           {loading ? (
-             <div style={styles.loadingContainer}>⌛ Connecting to Blockchain...</div>
+             <div style={styles.loadingContainer}>⌛ Syncing...</div>
           ) : (
             <>
               {activeTab === 'overview' && (
                 <div style={styles.grid}>
-                  <StatCard title="Incoming Stock" value={stats.incoming} Icon={Icons.Inbox} color="#8b5cf6" />
                   <StatCard title="Storage Batches" value={stats.stock} Icon={Icons.Inventory} color="#10b981" />
-                  <StatCard title="Outbound Shipments" value={stats.sent} Icon={Icons.Transfer} color="#f59e0b" />
-                </div>
-              )}
-
-              {activeTab === 'inbox' && (
-                <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Pending Stock from Distributor</h3>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.table}>
-                      <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Distributor</th><th>Quantity</th><th>Date</th><th>Actions</th></tr>
-                      </thead>
-                      <tbody>
-                        {inbox.map(req => (
-                          <tr key={req.id.toString()} style={styles.tableRow}>
-                            <td style={{fontWeight: 600}}>{req.batchNumber}</td>
-                            <td>{req.sender.slice(0,12)}...</td>
-                            <td>{req.quantity.toString()}</td>
-                            <td>{new Date(Number(req.createdAt)*1000).toLocaleDateString()}</td>
-                            <td>
-                              <div style={{display: 'flex', gap: '0.5rem'}}>
-                                <button style={styles.btnApprove} onClick={() => handleAccept(req.id)}>Accept Stock</button>
-                                <button style={styles.btnReject} onClick={() => handleReject(req.id)}>Reject</button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                        {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No incoming stock requests.</td></tr>}
-                      </tbody>
-                    </table>
-                  </div>
+                  <StatCard title="Inbound Pending" value={stats.incoming} Icon={Icons.Inbox} color="#8b5cf6" />
+                  <StatCard title="Dispatched Total" value={stats.sent} Icon={Icons.Transfer} color="#f59e0b" />
                 </div>
               )}
 
@@ -255,18 +260,17 @@ export default function SupplierDashboard() {
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                       <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Product</th><th>Original Manufacturer</th><th>Current Quantity</th></tr>
+                        <tr><th>Batch #</th><th>Product</th><th>Valuation</th><th>In Stock</th></tr>
                       </thead>
                       <tbody>
                         {inventory.map(b => (
                           <tr key={b.batchNumber} style={styles.tableRow}>
                             <td style={{fontWeight: 600}}>{b.batchNumber}</td>
                             <td>{b.productName}</td>
-                            <td>{b.manufacturer}</td>
+                            <td>{b.price} {b.currency}</td>
                             <td style={{fontWeight: 700, color: '#10b981'}}>{b.quantity} units</td>
                           </tr>
                         ))}
-                        {inventory.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>Warehouse is currently empty.</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -275,26 +279,23 @@ export default function SupplierDashboard() {
 
               {activeTab === 'pharmacists' && (
                 <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Manage Partner Pharmacies</h3>
-                  <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Authorize pharmacies to enable medicine transfers to them.</p>
+                  <h3 style={styles.panelTitle}>Partner Pharmacy Network</h3>
                   <div style={{display: 'flex', gap: '1rem', marginBottom: '2rem'}}>
                     <select style={{...styles.input, flex: 1}} value={pharmToAdd} onChange={e => setPharmToAdd(e.target.value)}>
-                      <option value="">-- Choose Pharmacy to Authorize --</option>
+                      <option value="">-- Select Pharmacy --</option>
                       {allPharmacists.filter(p => !myWhitelistedPharms.includes(p.address.toLowerCase())).map(p => (
                         <option key={p.address} value={p.address}>{p.name} ({p.address.slice(0,10)}...)</option>
                       ))}
                     </select>
-                    <button onClick={handleAddPharmacist} style={{...styles.submitBtn, marginTop: 0, padding: '0 2rem'}}>Authorize</button>
+                    <button onClick={handleAddPharmacist} style={{...styles.submitBtn, marginTop: 0, padding: '0 2rem'}}>Add Pharmacy</button>
                   </div>
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
-                      <thead style={styles.tableHeader}><tr><th>Pharmacy Name</th><th>Wallet Address</th><th>Status</th></tr></thead>
+                      <thead style={styles.tableHeader}><tr><th>Name</th><th>Wallet Address</th><th>Status</th></tr></thead>
                       <tbody>
                         {allPharmacists.filter(p => myWhitelistedPharms.includes(p.address.toLowerCase())).map(p => (
                           <tr key={p.address} style={styles.tableRow}>
-                            <td style={{fontWeight: 600}}>{p.name}</td>
-                            <td>{p.address}</td>
-                            <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AUTHORIZED</span></td>
+                            <td>{p.name}</td><td>{p.address}</td><td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AUTHORIZED</span></td>
                           </tr>
                         ))}
                       </tbody>
@@ -308,26 +309,66 @@ export default function SupplierDashboard() {
                   <h3 style={styles.panelTitle}>Dispatch to Pharmacy</h3>
                   <form onSubmit={handleTransfer} style={styles.formStack}>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Select Stock Batch</label>
+                      <label style={styles.label}>Select Stock</label>
                       <select style={styles.input} value={transferData.batchNumber} onChange={e => setTransferData({...transferData, batchNumber: e.target.value})} required>
-                        <option value="">-- Choose Available Batch --</option>
+                        <option value="">-- Choose Batch --</option>
                         {inventory.map(b => (
                           <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.quantity} in stock)</option>
                         ))}
                       </select>
                     </div>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Target Pharmacy</label>
+                      <label style={styles.label}>Pharmacy Name</label>
                       <select style={styles.input} value={transferData.pharmacist} onChange={e => setTransferData({...transferData, pharmacist: e.target.value})} required>
-                        <option value="">-- Select Authorized Pharmacy --</option>
+                        <option value="">-- Select Pharmacy --</option>
                         {allPharmacists.filter(p => myWhitelistedPharms.includes(p.address.toLowerCase())).map(p => (
                           <option key={p.address} value={p.address}>{p.name}</option>
                         ))}
                       </select>
                     </div>
-                    <div style={styles.formGroup}><label style={styles.label}>Shipment Quantity</label><input style={styles.input} type="number" value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required/></div>
-                    <button type="submit" style={styles.submitBtn}>Initialize Shipment</button>
+                    <div style={styles.formGroup}><label style={styles.label}>Quantity</label><input style={styles.input} type="number" value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required/></div>
+                    <div style={styles.formGroup}><label style={styles.label}>Custom Price per Unit (Optional)</label><input style={styles.input} type="number" value={transferData.price} onChange={e => setTransferData({...transferData, price: e.target.value})} placeholder="0 for default"/></div>
+                    <button type="submit" style={styles.submitBtn}>Dispatch Items & Generate Note</button>
                   </form>
+                </div>
+              )}
+
+              {activeTab === 'invoice' && lastInvoice && (
+                <div style={styles.lightPanel}>
+                   <div ref={invoiceRef} style={{padding: '30px', background: '#fff', border: '1px solid #ddd'}}>
+                      <div style={{textAlign: 'center', marginBottom: '30px'}}>
+                        <h2 style={{color: '#8b5cf6', margin: 0}}>WAREHOUSE DISPATCH NOTE</h2>
+                        <p style={{fontSize: '0.8rem', color: '#666'}}>Blockchain Secured Supply Chain Document</p>
+                      </div>
+                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '0.9rem'}}>
+                        <div>
+                          <strong>Supplier:</strong> {account.slice(0,10)}...<br/>
+                          <strong>To:</strong> {lastInvoice.receiver} ({lastInvoice.receiverAddr.slice(0,10)}...)
+                        </div>
+                        <div style={{textAlign: 'right'}}>
+                          <strong>Date:</strong> {lastInvoice.date}<br/>
+                          <strong>Batch:</strong> {lastInvoice.batch}
+                        </div>
+                      </div>
+                      <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '20px'}}>
+                        <thead><tr style={{borderBottom: '2px solid #333', textAlign: 'left'}}><th style={{padding: '8px'}}>Medicine</th><th style={{padding: '8px'}}>Qty</th><th style={{padding: '8px'}}>Price</th><th style={{padding: '8px', textAlign: 'right'}}>Total</th></tr></thead>
+                        <tbody>
+                          <tr>
+                            <td style={{padding: '8px'}}>{lastInvoice.product}</td>
+                            <td style={{padding: '8px'}}>{lastInvoice.qty}</td>
+                            <td style={{padding: '8px'}}>{lastInvoice.price}</td>
+                            <td style={{padding: '8px', textAlign: 'right'}}>{lastInvoice.total} {lastInvoice.currency}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                      <div style={{textAlign: 'right', borderTop: '2px solid #333', paddingTop: '10px', fontSize: '1.2rem', fontWeight: 800}}>
+                        Grand Total: {lastInvoice.total} {lastInvoice.currency}
+                      </div>
+                      <div style={{marginTop: '40px', textAlign: 'center', fontSize: '0.75rem', color: '#888'}}>
+                        This document serves as proof of transfer between Supplier and Pharmacy.
+                      </div>
+                   </div>
+                   <button onClick={printInvoice} style={{...styles.submitBtn, marginTop: '20px'}}>Print / Download Note</button>
                 </div>
               )}
             </>
@@ -373,7 +414,7 @@ const styles = {
   panelTitle: { color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem' },
   tableWrapper: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.8rem' },
+  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', padding: '12px' },
   tableRow: { borderBottom: '1px solid #f1f5f9', color: '#334155' },
   badge: { padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', fontSize: '0.75rem' },
   formStack: { display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '500px' },
