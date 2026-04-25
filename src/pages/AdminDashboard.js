@@ -20,63 +20,86 @@ export default function AdminDashboard() {
 
   // Fetch Stats & Basic Data
   const fetchData = useCallback(async () => {
-    if (!contracts.registry || !contracts.product) return;
+    if (!contracts.registry || !contracts.product) {
+      console.warn("Contracts not initialized yet");
+      return;
+    }
     setLoading(true);
     try {
-      // 1. Fetch All Registration Events
-      const regFilter = contracts.registry.filters.RegistrationRequested();
-      const regEvents = await contracts.registry.queryFilter(regFilter);
+      console.log("Admin: Fetching data...");
       
+      // 1. Get All Entities (Try new getter, fallback to events)
+      let allAddresses = [];
+      try {
+        allAddresses = await contracts.registry.getAllEntities();
+        console.log("Fetched entities via getter:", allAddresses.length);
+      } catch (e) {
+        console.log("Getter failed, falling back to events...");
+        const filter = contracts.registry.filters.RegistrationRequested();
+        const events = await contracts.registry.queryFilter(filter);
+        allAddresses = [...new Set(events.map(ev => ev.args?.applicant || ev.args[0]))];
+      }
+
       const pending = [];
       const mfrs = [];
       const dists = [];
       const supps = [];
       const pharms = [];
 
-      for (let event of regEvents) {
-        const addr = event.args.applicant;
-        const entity = await contracts.registry.getEntity(addr);
-        const data = {
-          address: addr,
-          role: Number(entity.role),
-          name: entity.name,
-          email: entity.email,
-          location: entity.location,
-          status: Number(entity.status),
-          license: entity.licenseNumber
-        };
+      for (let addr of allAddresses) {
+        try {
+          const entity = await contracts.registry.getEntity(addr);
+          const data = {
+            address: addr,
+            role: Number(entity.role),
+            name: entity.name,
+            email: entity.email,
+            location: entity.location,
+            status: Number(entity.status),
+            license: entity.licenseNumber
+          };
 
-        if (data.status === 1) pending.push(data); // Pending
-        else if (data.status === 2) { // Approved
-          if (data.role === 2) mfrs.push(data);
-          else if (data.role === 3) dists.push(data);
-          else if (data.role === 4) supps.push(data);
-          else if (data.role === 5) pharms.push(data);
-        }
+          if (data.status === 1) pending.push(data); 
+          else if (data.status === 2) { 
+            if (data.role === 2) mfrs.push(data);
+            else if (data.role === 3) dists.push(data);
+            else if (data.role === 4) supps.push(data);
+            else if (data.role === 5) pharms.push(data);
+          }
+        } catch (err) { console.error("Error fetching entity", addr, err); }
       }
 
       // 2. Fetch All Batches
-      const batchFilter = contracts.product.filters.BatchAdded();
-      const batchEvents = await contracts.product.queryFilter(batchFilter);
+      let batchIds = [];
+      try {
+        batchIds = await contracts.product.getAllBatches();
+      } catch (e) {
+        const bFilter = contracts.product.filters.BatchAdded();
+        const bEvents = await contracts.product.queryFilter(bFilter);
+        // Note: indexed strings are hashes, but maybe we can try queryFilter for other events
+        // Better fallback: just use the ones we found via events if getter fails
+        batchIds = bEvents.map(ev => ev.args?.batchNumber || ev.args[0]);
+      }
+
       const batches = [];
-      for (let event of batchEvents) {
-        const b = await contracts.product.getBatch(event.args.batchNumber);
-        batches.push(b);
+      for (let bid of batchIds) {
+        try {
+          // If bid is a hash (from indexed string), getBatch might fail. 
+          // This is why the contract change was important.
+          const b = await contracts.product.getBatch(bid);
+          batches.push(b);
+        } catch (err) { console.error("Error fetching batch", bid, err); }
       }
 
       setPendingRequests(pending);
       setEntities({ manufacturers: mfrs, distributors: dists, suppliers: supps, pharmacists: pharms });
       setAllBatches(batches);
       setStats({
-        mfr: mfrs.length,
-        dist: dists.length,
-        supp: supps.length,
-        pharm: pharms.length,
-        batches: batches.length
+        mfr: mfrs.length, dist: dists.length, supp: supps.length, pharm: pharms.length, batches: batches.length
       });
 
     } catch (err) {
-      console.error('Admin Fetch Error:', err);
+      console.error('Admin Dashboard Fetch Error:', err);
     } finally {
       setLoading(false);
     }
