@@ -88,6 +88,33 @@ export const Web3Provider = ({ children }) => {
   };
 
   useEffect(() => {
+    const initReadOnly = async () => {
+      try {
+        // Try to connect to common local Ganache ports
+        let rpcUrl = "http://127.0.0.1:7545"; // Default Ganache UI
+        
+        const readOnlyProvider = new ethers.JsonRpcProvider(rpcUrl);
+        // Test connection
+        await readOnlyProvider.getNetwork();
+        
+        console.log("Connected to read-only provider:", rpcUrl);
+        setProvider(readOnlyProvider);
+        initContracts(readOnlyProvider);
+      } catch (err) {
+        console.log("Local RPC (7545) failed, trying 8545...");
+        try {
+           const readOnlyProvider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+           await readOnlyProvider.getNetwork();
+           setProvider(readOnlyProvider);
+           initContracts(readOnlyProvider);
+        } catch(e) {
+           console.warn("No local blockchain found for read-only access.");
+        }
+      }
+    };
+
+    initReadOnly();
+
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', async (accounts) => {
         if (accounts.length > 0) {
@@ -97,11 +124,12 @@ export const Web3Provider = ({ children }) => {
           }
         } else {
           disconnectWallet();
+          initReadOnly(); // Fallback to read-only
         }
       });
       window.ethereum.on('chainChanged', () => window.location.reload());
     }
-  }, [contracts.registry]);
+  }, []); // Run once on mount
 
   return (
     <Web3Context.Provider value={{

@@ -14,7 +14,7 @@ export default function VerifyProduct() {
     const targetBatch = manualBatch || batchNumber;
     if (!targetBatch) return;
     if (!contracts.trace) {
-      setError('Trace contract not connected. Please connect your wallet.');
+      setError('Connecting to blockchain... Please wait or refresh.');
       return;
     }
 
