@@ -12,6 +12,9 @@ const Icons = {
   Shield: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
   ),
+  Medicine: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 21H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path><path d="M10 5V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2"></path><path d="M4 11h16"></path><path d="M8 15h.01"></path><path d="M16 15h.01"></path></svg>
+  ),
   Activity: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
   ),
@@ -31,9 +34,13 @@ export default function AdminDashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   // Data State
-  const [pendingUsers, setPendingUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
-  const [stats, setStats] = useState({ total: 0, pending: 0, active: 0 });
+  const [allBatches, setAllBatches] = useState([]);
+  const [stats, setStats] = useState({ 
+    total: 0, pending: 0, active: 0, 
+    manufacturers: 0, distributors: 0, suppliers: 0, pharmacists: 0,
+    batches: 0
+  });
   const [actionMsg, setActionMsg] = useState('');
 
   useEffect(() => {
@@ -47,12 +54,12 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!contracts.registry) return;
+    if (!contracts.registry || !contracts.product) return;
     setLoading(true);
     try {
       const allAddrs = await contracts.registry.getAllRegistered();
       const list = [];
-      let pCount = 0, aCount = 0;
+      let pCount = 0, aCount = 0, mCount = 0, dCount = 0, sCount = 0, phCount = 0;
 
       for (let addr of allAddrs) {
         const entity = await contracts.registry.getEntity(addr);
@@ -64,19 +71,43 @@ export default function AdminDashboard() {
         };
         list.push(data);
         if (data.status === 1) pCount++;
-        if (data.status === 2) aCount++;
+        if (data.status === 2) {
+          aCount++;
+          if (data.role === 2) mCount++;
+          if (data.role === 3) dCount++;
+          if (data.role === 4) sCount++;
+          if (data.role === 5) phCount++;
+        }
       }
-
       setAllUsers(list);
-      setPendingUsers(list.filter(u => u.status === 1));
-      setStats({ total: list.length, pending: pCount, active: aCount });
+
+      const allBatchNos = await contracts.product.getAllBatchNumbers();
+      const batchesList = [];
+      for (let bn of allBatchNos) {
+        const b = await contracts.product.getBatch(bn);
+        const s = await contracts.product.getBatchStatus(bn);
+        batchesList.push({
+          batchNumber: bn,
+          productName: b.productName,
+          manufacturer: b.manufacturer,
+          status: Number(s)
+        });
+      }
+      setAllBatches(batchesList.reverse());
+
+      setStats({ 
+        total: list.length, pending: pCount, active: aCount,
+        manufacturers: mCount, distributors: dCount, suppliers: sCount, pharmacists: phCount,
+        batches: allBatchNos.length
+      });
+
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard Sync Error:", err);
       setActionMsg('❌ Sync Error');
     } finally {
       setLoading(false);
     }
-  }, [contracts.registry]);
+  }, [contracts.registry, contracts.product]);
 
   useEffect(() => {
     fetchData();
@@ -87,11 +118,9 @@ export default function AdminDashboard() {
       setActionMsg('⏳ Updating Status...');
       const tx = await contracts.registry.updateEntityStatus(userAddr, status);
       await tx.wait();
-      setActionMsg('✅ User Status Updated!');
+      setActionMsg('✅ Success!');
       fetchData();
-    } catch (err) {
-      setActionMsg('❌ Update Failed');
-    }
+    } catch (err) { setActionMsg('❌ Failed'); }
   };
 
   const roleNames = ["None", "Admin", "Manufacturer", "Distributor", "Supplier", "Pharmacist"];
@@ -108,9 +137,10 @@ export default function AdminDashboard() {
         <nav style={styles.nav}>
           <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Network Overview" />
           <NavItem active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} Icon={Icons.Shield} label="Approval Queue" count={stats.pending} />
-          <NavItem active={activeTab === 'all-users'} onClick={() => setActiveTab('all-users')} Icon={Icons.Users} label="Registered Entities" />
-          <div style={styles.navDivider}>System Settings</div>
-          <NavItem active={activeTab === 'audit'} onClick={() => setActiveTab('audit')} Icon={Icons.Activity} label="Audit Logs" />
+          <NavItem active={activeTab === 'users'} onClick={() => setActiveTab('users')} Icon={Icons.Users} label="Entity Management" />
+          <NavItem active={activeTab === 'batches'} onClick={() => setActiveTab('batches')} Icon={Icons.Medicine} label="Medicine Tracking" />
+          <div style={styles.navDivider}>Global Records</div>
+          <NavItem active={activeTab === 'audit'} onClick={() => setActiveTab('audit')} Icon={Icons.Activity} label="Transaction Audit" />
         </nav>
         <div style={styles.sidebarFooter}>
            <button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
@@ -134,25 +164,33 @@ export default function AdminDashboard() {
 
         <div style={styles.content} className="animate-fade-in">
            {loading ? (
-              <div style={styles.loadingContainer}>⌛ Connecting to Registry...</div>
+              <div style={styles.loadingContainer}>⌛ Connecting to Blockchain...</div>
            ) : (
              <>
                {activeTab === 'overview' && (
-                 <div style={styles.statsGrid}>
-                   <StatCard title="Total Entities" value={stats.total} Icon={Icons.Users} color="#3b82f6" />
-                   <StatCard title="Pending Approvals" value={stats.pending} Icon={Icons.Shield} color="#ef4444" />
-                   <StatCard title="Active Nodes" value={stats.active} Icon={Icons.Activity} color="#10b981" />
-                 </div>
+                 <>
+                   <div style={styles.statsGrid}>
+                     <StatCard title="Manufacturers" value={stats.manufacturers} Icon={Icons.Overview} color="#10b981" />
+                     <StatCard title="Distributors" value={stats.distributors} Icon={Icons.Overview} color="#3b82f6" />
+                     <StatCard title="Suppliers" value={stats.suppliers} Icon={Icons.Overview} color="#8b5cf6" />
+                     <StatCard title="Pharmacists" value={stats.pharmacists} Icon={Icons.Overview} color="#f59e0b" />
+                   </div>
+                   <div style={{...styles.statsGrid, marginTop: '1.5rem'}}>
+                     <StatCard title="Total Batches" value={stats.batches} Icon={Icons.Medicine} color="#10b981" />
+                     <StatCard title="Approval Queue" value={stats.pending} Icon={Icons.Shield} color="#ef4444" />
+                     <StatCard title="Active Users" value={stats.active} Icon={Icons.Activity} color="#10b981" />
+                   </div>
+                 </>
                )}
 
                {activeTab === 'pending' && (
                  <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Entity Approval Queue</h3>
+                    <h3 style={styles.panelTitle}>Pending Approvals</h3>
                     <div style={styles.tableWrapper}>
                       <table style={styles.table}>
                         <thead><tr style={styles.tableHeader}><th>Name</th><th>Role</th><th>Wallet Address</th><th>Action</th></tr></thead>
                         <tbody>
-                          {pendingUsers.map(user => (
+                          {allUsers.filter(u => u.status === 1).map(user => (
                             <tr key={user.address} style={styles.tableRow}>
                               <td style={{fontWeight: 700}}>{user.name}</td>
                               <td><span style={styles.roleBadge}>{roleNames[user.role]}</span></td>
@@ -163,14 +201,14 @@ export default function AdminDashboard() {
                               </td>
                             </tr>
                           ))}
-                          {pendingUsers.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '3rem', color: '#64748b'}}>All clear! No pending approvals.</td></tr>}
+                          {allUsers.filter(u => u.status === 1).length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No pending users.</td></tr>}
                         </tbody>
                       </table>
                     </div>
                  </div>
                )}
 
-               {activeTab === 'all-users' && (
+               {activeTab === 'users' && (
                  <div className="glass-panel">
                     <h3 style={styles.panelTitle}>Network User Directory</h3>
                     <div style={styles.tableWrapper}>
@@ -198,11 +236,37 @@ export default function AdminDashboard() {
                  </div>
                )}
 
+               {activeTab === 'batches' && (
+                 <div className="glass-panel">
+                    <h3 style={styles.panelTitle}>Global Medicine Batches</h3>
+                    <div style={styles.tableWrapper}>
+                      <table style={styles.table}>
+                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product Name</th><th>Manufacturer</th><th>Status</th></tr></thead>
+                        <tbody>
+                          {allBatches.map((b, idx) => (
+                            <tr key={idx} style={styles.tableRow}>
+                              <td style={{fontWeight: 700}}>{b.batchNumber}</td>
+                              <td>{b.productName}</td>
+                              <td>{b.manufacturer.slice(0,12)}...</td>
+                              <td>
+                                <span style={{...styles.badge, background: b.status === 2 ? '#fee2e2' : (b.status === 1 ? '#fff7ed' : '#f0fdf4'), color: b.status === 2 ? '#ef4444' : (b.status === 1 ? '#f59e0b' : '#10b981')}}>
+                                  {b.status === 2 ? 'RECALLED' : (b.status === 1 ? 'EXPIRED' : 'ACTIVE')}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                          {allBatches.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No batches found.</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+                 </div>
+               )}
+
                {activeTab === 'audit' && (
                  <div className="glass-panel" style={{textAlign: 'center', padding: '4rem'}}>
                     <div style={{fontSize: '3rem', marginBottom: '1rem'}}>📋</div>
-                    <h3>Audit Logs</h3>
-                    <p style={{color: '#64748b'}}>This module is currently indexing blockchain events. Check back soon for full traceability audits.</p>
+                    <h3>Global Transaction Audit</h3>
+                    <p style={{color: '#64748b'}}>Centralized tracking of all blockchain handoffs.</p>
                  </div>
                )}
              </>
@@ -246,11 +310,11 @@ const styles = {
   avatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#0f172a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
   userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.95rem' },
   content: { padding: '2.5rem' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' },
-  statCard: { background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1.25rem', alignItems: 'center' },
-  statIconContainer: { width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  statTitle: { color: '#64748b', fontSize: '0.85rem', fontWeight: 500 },
-  statValue: { fontSize: '1.75rem', fontWeight: 800, color: '#0f172a' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' },
+  statCard: { background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1rem', alignItems: 'center' },
+  statIconContainer: { width: '44px', height: '44px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  statTitle: { color: '#64748b', fontSize: '0.8rem', fontWeight: 500 },
+  statValue: { fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' },
   panelTitle: { fontSize: '1.25rem', color: '#0f172a', marginBottom: '2rem', marginTop: 0 },
   tableWrapper: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse' },
