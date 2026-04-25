@@ -1,5 +1,6 @@
 import RegistryABI from '../contracts/RegistryContract.json';
 import ProductABI  from '../contracts/ProductContract.json';
+import TransferABI from '../contracts/TransferContract.json';
 
 const getAddress = (artifact) => {
   if (!artifact || !artifact.networks) return null;
@@ -13,10 +14,10 @@ const getAddress = (artifact) => {
 
 export const REGISTRY_ADDRESS  = getAddress(RegistryABI);
 export const PRODUCT_ADDRESS   = getAddress(ProductABI);
-export const TRANSFER_ADDRESS  = null;
+export const TRANSFER_ADDRESS  = getAddress(TransferABI);
 export const TRACE_ADDRESS     = null;
 
 export const REGISTRY_ABI  = RegistryABI.abi;
 export const PRODUCT_ABI   = ProductABI.abi;
-export const TRANSFER_ABI  = [];
+export const TRANSFER_ABI  = TransferABI.abi;
 export const TRACE_ABI     = [];
