@@ -26,6 +26,9 @@ const Icons = {
   ),
   QR: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M7 7h.01M17 7h.01M7 17h.01"></path></svg>
+  ),
+  UserPlus: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
   )
 };
 
@@ -39,7 +42,8 @@ export default function ManufacturerDashboard() {
 
   // Data State
   const [batches, setBatches] = useState([]);
-  const [distributors, setDistributors] = useState([]);
+  const [allDistributors, setAllDistributors] = useState([]);
+  const [myWhitelistedDists, setMyWhitelistedDists] = useState([]);
   const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, recalled: 0 });
   const [actionMsg, setActionMsg] = useState('');
 
@@ -48,7 +52,8 @@ export default function ManufacturerDashboard() {
     batchNumber: '', productName: '', genericName: '', dosageForm: 'Tablet',
     strength: '', manufacturerName: '', costPerUnit: '', currency: 'PKR', mfgDate: '', expiryDate: '', totalQuantity: ''
   });
-  const [transferData, setTransferData] = useState({ batchNumber: '', distributor: '', quantity: '' });
+  const [transferData, setTransferData] = useState({ batchNumber: '', distributor: '', quantity: '', price: '0' });
+  const [distToAdd, setDistToAdd] = useState('');
 
   // Handle Resize
   useEffect(() => {
@@ -101,7 +106,7 @@ export default function ManufacturerDashboard() {
       setBatches(batchList);
       setStats({ total: batchList.length, active, expired, recalled });
 
-      // 2. Fetch Distributors
+      // 2. Fetch All Approved Distributors (Global)
       const allAddrs = await contracts.registry.getAllRegistered();
       const dists = [];
       for (let addr of allAddrs) {
@@ -110,7 +115,11 @@ export default function ManufacturerDashboard() {
           dists.push({ address: addr, name: entity.name });
         }
       }
-      setDistributors(dists);
+      setAllDistributors(dists);
+
+      // 3. Fetch My Whitelisted Distributors
+      const myDists = await contracts.transfer.getDistributors(account);
+      setMyWhitelistedDists(myDists.map(addr => addr.toLowerCase()));
 
     } catch (err) {
       console.error(err);
@@ -118,7 +127,7 @@ export default function ManufacturerDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [contracts.product, contracts.registry, account]);
+  }, [contracts.product, contracts.registry, contracts.transfer, account]);
 
   useEffect(() => {
     fetchData();
@@ -130,18 +139,16 @@ export default function ManufacturerDashboard() {
       setActionMsg('⏳ Creating Batch...');
       const mfgUnix = Math.floor(new Date(newBatch.mfgDate).getTime() / 1000);
       const expUnix = Math.floor(new Date(newBatch.expiryDate).getTime() / 1000);
-
-      // Ensure numeric values are passed correctly
       const qty = window.BigInt(newBatch.totalQuantity || 0);
       const cost = window.BigInt(newBatch.costPerUnit || 0);
 
       const tx = await contracts.product.addBatch(
         newBatch.batchNumber, newBatch.productName, newBatch.genericName,
         newBatch.dosageForm, newBatch.strength, newBatch.manufacturerName,
-        ['N/A'], [0], ['N/A'], // Placeholder raw materials
-        cost, newBatch.currency || 'PKR',
+        [], [], [],
+        cost, newBatch.currency,
         mfgUnix, expUnix, qty,
-        "", "" // CIDs
+        "", ""
       );
       await tx.wait();
       setActionMsg('✅ Batch Created!');
@@ -153,7 +160,22 @@ export default function ManufacturerDashboard() {
       setActiveTab('overview');
     } catch (err) { 
       console.error(err);
-      setActionMsg('❌ ' + (err.reason || err.message || 'Error creating batch')); 
+      setActionMsg('❌ ' + (err.reason || err.message)); 
+    }
+  };
+
+  const handleAddDistributor = async () => {
+    if (!distToAdd) return;
+    try {
+      setActionMsg('⏳ Adding Distributor...');
+      const tx = await contracts.transfer.addDistributor(distToAdd);
+      await tx.wait();
+      setActionMsg('✅ Distributor Added!');
+      setDistToAdd('');
+      fetchData();
+    } catch (err) { 
+      console.error(err);
+      setActionMsg('❌ Failed to add distributor'); 
     }
   };
 
@@ -161,17 +183,27 @@ export default function ManufacturerDashboard() {
     e.preventDefault();
     try {
       setActionMsg('⏳ Initiating Transfer...');
-      const tx = await contracts.transfer.initiateTransfer(
-        transferData.distributor,
+      const qty = window.BigInt(transferData.quantity || 0);
+      const price = window.BigInt(transferData.price || 0);
+      
+      // Using requestTransfer (direction 0 = MFR_TO_DIST)
+      const tx = await contracts.transfer.requestTransfer(
+        0, 
         transferData.batchNumber,
-        transferData.quantity,
-        `Direct shipment from manufacturer ${account.slice(0,6)}`
+        transferData.distributor,
+        qty,
+        price,
+        "PKR",
+        `Shipment from manufacturer ${account.slice(0,6)}`
       );
       await tx.wait();
-      setActionMsg('✅ Transfer Initiated!');
-      setTransferData({ batchNumber: '', distributor: '', quantity: '' });
+      setActionMsg('✅ Transfer Requested!');
+      setTransferData({ batchNumber: '', distributor: '', quantity: '', price: '0' });
       fetchData();
-    } catch (err) { setActionMsg('❌ Transfer Failed'); }
+    } catch (err) { 
+      console.error(err);
+      setActionMsg('❌ ' + (err.reason || err.message)); 
+    }
   };
 
   const getQRUrl = (batchId) => {
@@ -179,36 +211,23 @@ export default function ManufacturerDashboard() {
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(baseUrl)}`;
   };
 
-  const renderOverview = () => (
-    <div style={styles.grid}>
-      <StatCard title="Total Batches" value={stats.total} Icon={Icons.Overview} color="#10b981" />
-      <StatCard title="Active Stock" value={stats.active} Icon={Icons.Overview} color="#3b82f6" />
-      <StatCard title="Expired" value={stats.expired} Icon={Icons.Alert} color="#f59e0b" />
-      <StatCard title="Recalled" value={stats.recalled} Icon={Icons.Alert} color="#ef4444" />
-    </div>
-  );
-
   return (
     <div style={styles.dashboardWrapper}>
-      {/* Sidebar Overlay for Mobile */}
       {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
 
-      {/* Sidebar */}
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
-        <div style={styles.sidebarBrand}>
-          <span style={{ color: '#10b981' }}>MediChain</span> Mfr
-        </div>
+        <div style={styles.sidebarBrand}><span style={{ color: '#10b981' }}>MediChain</span> Mfr</div>
         <nav style={styles.nav}>
           <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Overview" />
           <NavItem active={activeTab === 'create'} onClick={() => setActiveTab('create')} Icon={Icons.Create} label="Create Batch" />
-          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Transfer to Dist." />
-          <div style={styles.navDivider}>Monitoring</div>
-          <NavItem active={activeTab === 'expired'} onClick={() => setActiveTab('expired')} Icon={Icons.Alert} label="Expired Batches" count={stats.expired} />
-          <NavItem active={activeTab === 'recalled'} onClick={() => setActiveTab('recalled')} Icon={Icons.Alert} label="Recalled Batches" count={stats.recalled} />
+          <NavItem active={activeTab === 'distributors'} onClick={() => setActiveTab('distributors')} Icon={Icons.UserPlus} label="My Distributors" />
+          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Ship Products" />
+          <div style={styles.navDivider}>Inventory Control</div>
+          <NavItem active={activeTab === 'expired'} onClick={() => setActiveTab('expired')} Icon={Icons.Alert} label="Expired" count={stats.expired} />
+          <NavItem active={activeTab === 'recalled'} onClick={() => setActiveTab('recalled')} Icon={Icons.Alert} label="Recalled" count={stats.recalled} />
         </nav>
       </div>
 
-      {/* Main Content */}
       <div style={{ ...styles.main, marginLeft: isMobile ? '0' : '280px' }}>
         <header style={styles.header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -226,32 +245,32 @@ export default function ManufacturerDashboard() {
 
         <div style={styles.content}>
           {loading ? (
-             <div style={styles.loadingContainer}>⌛ Syncing with Blockchain...</div>
+             <div style={styles.loadingContainer}>⌛ Syncing...</div>
           ) : (
             <>
               {activeTab === 'overview' && (
                 <>
-                  {renderOverview()}
+                  <div style={styles.grid}>
+                    <StatCard title="Total Batches" value={stats.total} Icon={Icons.Overview} color="#10b981" />
+                    <StatCard title="Active Stock" value={stats.active} Icon={Icons.Overview} color="#3b82f6" />
+                    <StatCard title="Expired" value={stats.expired} Icon={Icons.Alert} color="#f59e0b" />
+                    <StatCard title="Recalled" value={stats.recalled} Icon={Icons.Alert} color="#ef4444" />
+                  </div>
                   <div style={styles.lightPanel}>
-                    <h3 style={styles.panelTitle}>Your Production History</h3>
+                    <h3 style={styles.panelTitle}>Production Log</h3>
                     <div style={styles.tableWrapper}>
                       <table style={styles.table}>
                         <thead style={styles.tableHeader}>
-                          <tr><th>Batch #</th><th>Product</th><th>Quantity</th><th>Remaining</th><th>Expiry</th><th>QR Code</th></tr>
+                          <tr><th>Batch #</th><th>Product</th><th>Remaining</th><th>Expiry</th><th>QR</th></tr>
                         </thead>
                         <tbody>
                           {batches.map(b => (
                             <tr key={b.batchNumber} style={styles.tableRow}>
                               <td style={{fontWeight: 600}}>{b.batchNumber}</td>
                               <td>{b.productName}</td>
-                              <td>{b.totalQuantity}</td>
-                              <td style={{color: Number(b.remaining) < 100 ? '#ef4444' : '#10b981'}}>{b.remaining}</td>
+                              <td>{b.remaining}</td>
                               <td>{new Date(b.expiryDate*1000).toLocaleDateString()}</td>
-                              <td>
-                                <button style={styles.iconBtn} onClick={() => window.open(getQRUrl(b.batchNumber))}>
-                                  <Icons.QR />
-                                </button>
-                              </td>
+                              <td><button style={styles.iconBtn} onClick={() => window.open(getQRUrl(b.batchNumber))}><Icons.QR /></button></td>
                             </tr>
                           ))}
                         </tbody>
@@ -261,92 +280,95 @@ export default function ManufacturerDashboard() {
                 </>
               )}
 
+              {activeTab === 'distributors' && (
+                <div style={styles.lightPanel}>
+                  <h3 style={styles.panelTitle}>My Delivery Network</h3>
+                  <p style={{color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem'}}>Authorize distributors to allow stock transfers to them.</p>
+                  
+                  <div style={{display: 'flex', gap: '1rem', marginBottom: '2rem'}}>
+                    <select style={{...styles.input, flex: 1}} value={distToAdd} onChange={e => setDistToAdd(e.target.value)}>
+                      <option value="">-- Choose Distributor to Authorize --</option>
+                      {allDistributors.filter(d => !myWhitelistedDists.includes(d.address.toLowerCase())).map(d => (
+                        <option key={d.address} value={d.address}>{d.name} ({d.address.slice(0,12)}...)</option>
+                      ))}
+                    </select>
+                    <button onClick={handleAddDistributor} style={{...styles.submitBtn, marginTop: 0, padding: '0 2rem'}}>Add to Network</button>
+                  </div>
+
+                  <h4 style={{fontSize: '0.9rem', color: '#1e293b', marginBottom: '1rem'}}>Authorized Distributors</h4>
+                  <div style={styles.tableWrapper}>
+                    <table style={styles.table}>
+                      <thead style={styles.tableHeader}><tr><th>Name</th><th>Address</th><th>Status</th></tr></thead>
+                      <tbody>
+                        {allDistributors.filter(d => myWhitelistedDists.includes(d.address.toLowerCase())).map(d => (
+                          <tr key={d.address} style={styles.tableRow}>
+                            <td style={{fontWeight: 600}}>{d.name}</td>
+                            <td style={{fontSize: '0.8rem'}}>{d.address}</td>
+                            <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AUTHORIZED</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'create' && (
                 <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Register New Medicine Batch</h3>
+                  <h3 style={styles.panelTitle}>Create Batch</h3>
                   <form onSubmit={handleAddBatch} style={styles.formGrid}>
-                    <div style={styles.formGroup}><label style={styles.label}>Batch Number</label><input style={styles.input} placeholder="MFR-BATCH-001" value={newBatch.batchNumber} onChange={e => setNewBatch({...newBatch, batchNumber: e.target.value})} required/></div>
-                    <div style={styles.formGroup}><label style={styles.label}>Product Name</label><input style={styles.input} placeholder="Panadol" value={newBatch.productName} onChange={e => setNewBatch({...newBatch, productName: e.target.value})} required/></div>
-                    <div style={styles.formGroup}><label style={styles.label}>Manufacturer Name</label><input style={styles.input} placeholder="GSK" value={newBatch.manufacturerName} onChange={e => setNewBatch({...newBatch, manufacturerName: e.target.value})} required/></div>
-                    <div style={styles.formGroup}><label style={styles.label}>Generic Name</label><input style={styles.input} placeholder="Paracetamol" value={newBatch.genericName} onChange={e => setNewBatch({...newBatch, genericName: e.target.value})} required/></div>
-                    <div style={styles.formGroup}><label style={styles.label}>Dosage Form (Type)</label>
-                      <select style={styles.input} value={newBatch.dosageForm} onChange={e => setNewBatch({...newBatch, dosageForm: e.target.value})}>
-                        {['Tablet', 'Capsule', 'Syrup', 'Injection', 'Cream', 'Drops', 'Powder'].map(f => (
-                          <option key={f} value={f}>{f}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={styles.formGroup}><label style={styles.label}>Strength</label><input style={styles.input} placeholder="500mg" value={newBatch.strength} onChange={e => setNewBatch({...newBatch, strength: e.target.value})} required/></div>
-                    <div style={styles.formGroup}><label style={styles.label}>Cost Per Unit</label><input style={styles.input} type="number" placeholder="0" value={newBatch.costPerUnit} onChange={e => setNewBatch({...newBatch, costPerUnit: e.target.value})} required/></div>
-                    <div style={styles.formGroup}><label style={styles.label}>Currency</label>
-                      <select style={styles.input} value={newBatch.currency || 'PKR'} onChange={e => setNewBatch({...newBatch, currency: e.target.value})}>
-                        {['PKR', 'USD', 'EUR', 'GBP'].map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={styles.formGroup}><label style={styles.label}>Total Quantity</label><input style={styles.input} type="number" value={newBatch.totalQuantity} onChange={e => setNewBatch({...newBatch, totalQuantity: e.target.value})} required/></div>
+                    <div style={styles.formGroup}><label style={styles.label}>Batch #</label><input style={styles.input} value={newBatch.batchNumber} onChange={e => setNewBatch({...newBatch, batchNumber: e.target.value})} required/></div>
+                    <div style={styles.formGroup}><label style={styles.label}>Product Name</label><input style={styles.input} value={newBatch.productName} onChange={e => setNewBatch({...newBatch, productName: e.target.value})} required/></div>
+                    <div style={styles.formGroup}><label style={styles.label}>Dosage Form</label><select style={styles.input} value={newBatch.dosageForm} onChange={e => setNewBatch({...newBatch, dosageForm: e.target.value})}>{['Tablet','Syrup','Injection','Cream'].map(f=><option key={f} value={f}>{f}</option>)}</select></div>
+                    <div style={styles.formGroup}><label style={styles.label}>Strength</label><input style={styles.input} value={newBatch.strength} onChange={e => setNewBatch({...newBatch, strength: e.target.value})} required/></div>
+                    <div style={styles.formGroup}><label style={styles.label}>Qty</label><input style={styles.input} type="number" value={newBatch.totalQuantity} onChange={e => setNewBatch({...newBatch, totalQuantity: e.target.value})} required/></div>
+                    <div style={styles.formGroup}><label style={styles.label}>Cost</label><input style={styles.input} type="number" value={newBatch.costPerUnit} onChange={e => setNewBatch({...newBatch, costPerUnit: e.target.value})} required/></div>
                     <div style={styles.formGroup}><label style={styles.label}>Mfg Date</label><input style={styles.input} type="date" value={newBatch.mfgDate} onChange={e => setNewBatch({...newBatch, mfgDate: e.target.value})} required/></div>
                     <div style={styles.formGroup}><label style={styles.label}>Expiry Date</label><input style={styles.input} type="date" value={newBatch.expiryDate} onChange={e => setNewBatch({...newBatch, expiryDate: e.target.value})} required/></div>
-                    <button type="submit" style={styles.submitBtn}>Create Batch on Blockchain</button>
+                    <button type="submit" style={styles.submitBtn}>Generate Batch</button>
                   </form>
                 </div>
               )}
 
               {activeTab === 'transfer' && (
                 <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Ship Batch to Distributor</h3>
+                  <h3 style={styles.panelTitle}>Ship Stock</h3>
                   <form onSubmit={handleTransfer} style={styles.formStack}>
                     <div style={styles.formGroup}>
                       <label style={styles.label}>Select Batch</label>
                       <select style={styles.input} value={transferData.batchNumber} onChange={e => setTransferData({...transferData, batchNumber: e.target.value})} required>
                         <option value="">-- Choose Batch --</option>
                         {batches.filter(b => Number(b.remaining) > 0 && b.status === 0).map(b => (
-                          <option key={b.batchNumber} value={b.batchNumber}>{b.productName} (#{b.batchNumber}) - {b.remaining} units</option>
+                          <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.remaining} units)</option>
                         ))}
                       </select>
                     </div>
                     <div style={styles.formGroup}>
                       <label style={styles.label}>Select Authorized Distributor</label>
                       <select style={styles.input} value={transferData.distributor} onChange={e => setTransferData({...transferData, distributor: e.target.value})} required>
-                        <option value="">-- Choose Distributor --</option>
-                        {distributors.map(d => (
+                        <option value="">-- Choose from Authorized Network --</option>
+                        {allDistributors.filter(d => myWhitelistedDists.includes(d.address.toLowerCase())).map(d => (
                           <option key={d.address} value={d.address}>{d.name} ({d.address.slice(0,10)}...)</option>
                         ))}
                       </select>
                     </div>
-                    <div style={styles.formGroup}>
-                      <label style={styles.label}>Quantity to Transfer</label>
-                      <input style={styles.input} type="number" value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required/>
-                    </div>
-                    <button type="submit" style={styles.submitBtn}>Initialize Smart Transfer</button>
+                    <div style={styles.formGroup}><label style={styles.label}>Quantity</label><input style={styles.input} type="number" value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required/></div>
+                    <button type="submit" style={styles.submitBtn}>Send Transfer Request</button>
                   </form>
                 </div>
               )}
 
               {(activeTab === 'expired' || activeTab === 'recalled') && (
                 <div style={styles.lightPanel}>
-                  <h3 style={{...styles.panelTitle, color: activeTab === 'recalled' ? '#ef4444' : '#f59e0b'}}>
-                    {activeTab === 'recalled' ? '🚫 Recalled Products' : '⌛ Expired Inventory'}
-                  </h3>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.table}>
-                      <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Product</th><th>Current Stock</th><th>Status Date</th><th>Action</th></tr>
-                      </thead>
-                      <tbody>
-                        {batches.filter(b => activeTab === 'recalled' ? b.status === 2 : b.status === 1).map(b => (
-                          <tr key={b.batchNumber} style={styles.tableRow}>
-                            <td>{b.batchNumber}</td>
-                            <td>{b.productName}</td>
-                            <td>{b.remaining}</td>
-                            <td>{activeTab === 'expired' ? new Date(b.expiryDate*1000).toLocaleDateString() : 'Immediate'}</td>
-                            <td><span style={styles.badge}>{activeTab.toUpperCase()}</span></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <h3 style={{...styles.panelTitle, color: activeTab === 'recalled' ? '#ef4444' : '#f59e0b'}}>{activeTab.toUpperCase()}</h3>
+                  <table style={styles.table}>
+                    <thead style={styles.tableHeader}><tr><th>Batch #</th><th>Product</th><th>Stock</th></tr></thead>
+                    <tbody>
+                      {batches.filter(b => activeTab === 'recalled' ? b.status === 2 : b.status === 1).map(b => (
+                        <tr key={b.batchNumber} style={styles.tableRow}><td>{b.batchNumber}</td><td>{b.productName}</td><td>{b.remaining}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </>
@@ -360,31 +382,25 @@ export default function ManufacturerDashboard() {
 const StatCard = ({ title, value, Icon, color }) => (
   <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}>
     <div style={{ ...styles.statIconContainer, color: color, background: `${color}15` }}><Icon /></div>
-    <div style={styles.statInfo}>
-      <div style={styles.statTitle}>{title}</div>
-      <div style={styles.statValue}>{value}</div>
-    </div>
+    <div style={styles.statInfo}><div style={styles.statTitle}>{title}</div><div style={styles.statValue}>{value}</div></div>
   </div>
 );
 
 const NavItem = ({ active, onClick, Icon, label, count }) => (
-  <div onClick={onClick} style={{ ...styles.navItem, ...(active ? styles.navItemActive : {}) }}>
-    <Icon /><span style={{ marginLeft: '12px', flex: 1 }}>{label}</span>
-    {count > 0 && <span style={styles.navCount}>{count}</span>}
-  </div>
+  <div onClick={onClick} style={{ ...styles.navItem, ...(active ? styles.navItemActive : {}) }}><Icon /><span style={{ marginLeft: '12px', flex: 1 }}>{label}</span>{count > 0 && <span style={styles.navCount}>{count}</span>}</div>
 );
 
 const styles = {
   dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f1f5f9', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 2000, overflow: 'hidden' },
-  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#ffffff', borderRight: '1px solid #e2e8f0', transition: 'left 0.3s ease', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '1.5rem 0' },
+  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#ffffff', borderRight: '1px solid #e2e8f0', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '1.5rem 0' },
   sidebarOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 90 },
   sidebarBrand: { fontSize: '1.5rem', fontWeight: 800, padding: '0 1.5rem 2rem', color: '#1e293b' },
   nav: { padding: '0 0.75rem' },
-  navItem: { display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderRadius: '8px', cursor: 'pointer', color: '#64748b', fontWeight: 500, marginBottom: '4px', transition: 'all 0.2s' },
+  navItem: { display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderRadius: '8px', cursor: 'pointer', color: '#64748b', fontWeight: 500, marginBottom: '4px' },
   navItemActive: { background: '#f1f5f9', color: '#10b981' },
   navCount: { background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px' },
   navDivider: { padding: '1.5rem 1rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' },
-  main: { flex: 1, height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' },
+  main: { flex: 1, height: '100vh', overflowY: 'auto' },
   header: { height: '70px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
   headerTitle: { fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', margin: 0 },
   iconBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' },
@@ -398,7 +414,7 @@ const styles = {
   panelTitle: { color: '#1e293b', marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem' },
   tableWrapper: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse' },
-  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.8rem' },
+  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.8rem', padding: '12px' },
   tableRow: { borderBottom: '1px solid #f1f5f9', color: '#334155' },
   badge: { padding: '2px 8px', borderRadius: '12px', background: '#f1f5f9', fontSize: '0.75rem' },
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' },
@@ -406,7 +422,10 @@ const styles = {
   formGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
   label: { fontSize: '0.85rem', fontWeight: 600, color: '#475569' },
   input: { padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem' },
-  submitBtn: { padding: '1rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', marginTop: '1rem', gridColumn: '1 / -1' },
+  submitBtn: { padding: '1rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', marginTop: '1rem' },
   toast: { background: '#f0fdf4', color: '#166534', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem', border: '1px solid #bbf7d0' },
-  loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b', fontSize: '1.1rem' }
+  loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' },
+  userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#10b981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' },
+  userName: { color: '#1e293b', fontWeight: 600, fontSize: '0.9rem' }
 };

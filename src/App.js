@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ManufacturerDashboard from './pages/ManufacturerDashboard';
 import DistributorDashboard from './pages/DistributorDashboard';
+import SupplierDashboard from './pages/SupplierDashboard';
 import VerifyProduct from './pages/VerifyProduct';
 import './App.css';
 
@@ -76,6 +77,24 @@ function AppContent() {
           element={
             <ProtectedRoute allowedRoles={['Distributor']}>
               <DistributorDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/supplier" 
+          element={
+            <ProtectedRoute allowedRoles={['Supplier']}>
+              <SupplierDashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/pharmacist" 
+          element={
+            <ProtectedRoute allowedRoles={['Pharmacist']}>
+              <PharmacistDashboard />
             </ProtectedRoute>
           } 
         />

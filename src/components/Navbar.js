@@ -11,6 +11,8 @@ export default function Navbar() {
       case 'Admin': return '/admin';
       case 'Manufacturer': return '/manufacturer';
       case 'Distributor': return '/distributor';
+      case 'Supplier': return '/supplier';
+      case 'Pharmacist': return '/pharmacist';
       default: return '/register';
     }
   };

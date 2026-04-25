@@ -10,6 +10,8 @@ export default function Home() {
     if (role === 'Admin') return <Navigate to="/admin" replace />;
     if (role === 'Manufacturer') return <Navigate to="/manufacturer" replace />;
     if (role === 'Distributor') return <Navigate to="/distributor" replace />;
+    if (role === 'Supplier') return <Navigate to="/supplier" replace />;
+    if (role === 'Pharmacist') return <Navigate to="/pharmacist" replace />;
   }
 
   return (

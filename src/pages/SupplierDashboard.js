@@ -13,8 +13,8 @@ const Icons = {
   Transfer: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg>
   ),
-  Suppliers: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+  Pharmacists: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2V4a2 2 0 0 0-2.2-1.7ZM7 21h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2Z"></path><path d="M12 7v6M9 10h6"></path></svg>
   ),
   Inventory: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
@@ -27,7 +27,7 @@ const Icons = {
   )
 };
 
-export default function DistributorDashboard() {
+export default function SupplierDashboard() {
   const { contracts, account } = useWeb3();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
@@ -37,14 +37,14 @@ export default function DistributorDashboard() {
   // Data State
   const [inbox, setInbox] = useState([]);
   const [inventory, setInventory] = useState([]);
-  const [allSuppliers, setAllSuppliers] = useState([]);
-  const [myWhitelistedSuppliers, setMyWhitelistedSuppliers] = useState([]);
+  const [allPharmacists, setAllPharmacists] = useState([]);
+  const [myWhitelistedPharms, setMyWhitelistedPharms] = useState([]);
   const [stats, setStats] = useState({ incoming: 0, stock: 0, sent: 0 });
   const [actionMsg, setActionMsg] = useState('');
 
   // Form States
-  const [transferData, setTransferData] = useState({ batchNumber: '', supplier: '', quantity: '', price: '0' });
-  const [suppToAdd, setSuppToAdd] = useState('');
+  const [transferData, setTransferData] = useState({ batchNumber: '', pharmacist: '', quantity: '', price: '0' });
+  const [pharmToAdd, setPharmToAdd] = useState('');
 
   // Handle Resize
   useEffect(() => {
@@ -61,13 +61,11 @@ export default function DistributorDashboard() {
     if (!contracts.transfer || !account) return;
     setLoading(true);
     try {
-      // 1. Fetch Inbox (Pending Incoming)
+      // 1. Fetch Inbox (Pending Incoming from Distributor)
       const pendingRequests = await contracts.transfer.getMyPendingInbox();
       setInbox(pendingRequests);
       
       // 2. Fetch My Inventory (Available Stock)
-      // Note: We need a way to get batches held by this distributor.
-      // In ProductContract, we have getAvailableStockBatches(address).
       const stockIds = await contracts.product.getAvailableStockBatches(account);
       const stockList = [];
       for (let id of stockIds) {
@@ -92,20 +90,20 @@ export default function DistributorDashboard() {
         sent: sentCount.length
       });
 
-      // 4. Fetch All Approved Suppliers (Global)
+      // 4. Fetch All Approved Pharmacists (Global)
       const allAddrs = await contracts.registry.getAllRegistered();
-      const supps = [];
+      const pharms = [];
       for (let addr of allAddrs) {
         const entity = await contracts.registry.getEntity(addr);
-        if (Number(entity.role) === 4 && Number(entity.status) === 2) {
-          supps.push({ address: addr, name: entity.name });
+        if (Number(entity.role) === 5 && Number(entity.status) === 2) {
+          pharms.push({ address: addr, name: entity.name });
         }
       }
-      setAllSuppliers(supps);
+      setAllPharmacists(pharms);
 
-      // 5. My Whitelisted Suppliers
-      const mySupps = await contracts.transfer.getSuppliers(account);
-      setMyWhitelistedSuppliers(mySupps.map(addr => addr.toLowerCase()));
+      // 5. My Whitelisted Pharmacists
+      const myPharms = await contracts.transfer.getPharmacists(account);
+      setMyWhitelistedPharms(myPharms.map(addr => addr.toLowerCase()));
 
     } catch (err) {
       console.error(err);
@@ -122,7 +120,7 @@ export default function DistributorDashboard() {
   const handleAccept = async (id) => {
     try {
       setActionMsg('⏳ Accepting...');
-      const tx = await contracts.transfer.acceptTransfer(id, "Received by Distributor");
+      const tx = await contracts.transfer.acceptTransfer(id, "Received by Supplier");
       await tx.wait();
       setActionMsg('✅ Accepted!');
       fetchData();
@@ -141,16 +139,16 @@ export default function DistributorDashboard() {
     } catch (err) { setActionMsg('❌ Reject Failed'); }
   };
 
-  const handleAddSupplier = async () => {
-    if (!suppToAdd) return;
+  const handleAddPharmacist = async () => {
+    if (!pharmToAdd) return;
     try {
-      setActionMsg('⏳ Adding Supplier...');
-      const tx = await contracts.transfer.addSupplier(suppToAdd);
+      setActionMsg('⏳ Adding Pharmacist...');
+      const tx = await contracts.transfer.addPharmacist(pharmToAdd);
       await tx.wait();
-      setActionMsg('✅ Supplier Added!');
-      setSuppToAdd('');
+      setActionMsg('✅ Pharmacist Added!');
+      setPharmToAdd('');
       fetchData();
-    } catch (err) { setActionMsg('❌ Failed to add supplier'); }
+    } catch (err) { setActionMsg('❌ Failed to add pharmacist'); }
   };
 
   const handleTransfer = async (e) => {
@@ -160,19 +158,19 @@ export default function DistributorDashboard() {
       const qty = window.BigInt(transferData.quantity || 0);
       const price = window.BigInt(transferData.price || 0);
       
-      // Direction 1 = DIST_TO_SUPP
+      // Direction 2 = SUPP_TO_PHARM
       const tx = await contracts.transfer.requestTransfer(
-        1, 
+        2, 
         transferData.batchNumber,
-        transferData.supplier,
+        transferData.pharmacist,
         qty,
         price,
         "PKR",
-        `Shipment from distributor ${account.slice(0,6)}`
+        `Shipment from supplier ${account.slice(0,6)}`
       );
       await tx.wait();
       setActionMsg('✅ Transfer Requested!');
-      setTransferData({ batchNumber: '', supplier: '', quantity: '', price: '0' });
+      setTransferData({ batchNumber: '', pharmacist: '', quantity: '', price: '0' });
       fetchData();
     } catch (err) { setActionMsg('❌ ' + (err.reason || err.message)); }
   };
@@ -182,14 +180,14 @@ export default function DistributorDashboard() {
       {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
 
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
-        <div style={styles.sidebarBrand}><span style={{ color: '#3b82f6' }}>MediChain</span> Dist</div>
+        <div style={styles.sidebarBrand}><span style={{ color: '#8b5cf6' }}>MediChain</span> Supp</div>
         <nav style={styles.nav}>
           <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Overview" />
-          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="Incoming Shipments" count={stats.incoming} />
-          <NavItem active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} Icon={Icons.Inventory} label="My Stock" />
-          <div style={styles.navDivider}>Distribution</div>
-          <NavItem active={activeTab === 'suppliers'} onClick={() => setActiveTab('suppliers')} Icon={Icons.UserPlus} label="My Suppliers" />
-          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Transfer Stock" />
+          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="From Distributor" count={stats.incoming} />
+          <NavItem active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} Icon={Icons.Inventory} label="Warehouse Stock" />
+          <div style={styles.navDivider}>Supply Chain</div>
+          <NavItem active={activeTab === 'pharmacists'} onClick={() => setActiveTab('pharmacists')} Icon={Icons.UserPlus} label="My Pharmacists" />
+          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Ship to Pharmacy" />
         </nav>
       </div>
 
@@ -203,31 +201,31 @@ export default function DistributorDashboard() {
             {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
             <div style={styles.userProfile}>
               <div style={styles.avatar}>{account?.slice(2, 4).toUpperCase()}</div>
-              {!isMobile && <span style={styles.userName}>Distributor</span>}
+              {!isMobile && <span style={styles.userName}>Supplier</span>}
             </div>
           </div>
         </header>
 
         <div style={styles.content}>
           {loading ? (
-             <div style={styles.loadingContainer}>⌛ Syncing Blockchain Data...</div>
+             <div style={styles.loadingContainer}>⌛ Connecting to Blockchain...</div>
           ) : (
             <>
               {activeTab === 'overview' && (
                 <div style={styles.grid}>
-                  <StatCard title="Pending Inbox" value={stats.incoming} Icon={Icons.Inbox} color="#3b82f6" />
-                  <StatCard title="Active Batches" value={stats.stock} Icon={Icons.Inventory} color="#10b981" />
-                  <StatCard title="Total Transfers" value={stats.sent} Icon={Icons.Transfer} color="#6366f1" />
+                  <StatCard title="Incoming Stock" value={stats.incoming} Icon={Icons.Inbox} color="#8b5cf6" />
+                  <StatCard title="Storage Batches" value={stats.stock} Icon={Icons.Inventory} color="#10b981" />
+                  <StatCard title="Outbound Shipments" value={stats.sent} Icon={Icons.Transfer} color="#f59e0b" />
                 </div>
               )}
 
               {activeTab === 'inbox' && (
                 <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Pending Incoming Shipments</h3>
+                  <h3 style={styles.panelTitle}>Pending Stock from Distributor</h3>
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                       <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Sender (Mfr)</th><th>Quantity</th><th>Date</th><th>Actions</th></tr>
+                        <tr><th>Batch #</th><th>Distributor</th><th>Quantity</th><th>Date</th><th>Actions</th></tr>
                       </thead>
                       <tbody>
                         {inbox.map(req => (
@@ -238,13 +236,13 @@ export default function DistributorDashboard() {
                             <td>{new Date(Number(req.createdAt)*1000).toLocaleDateString()}</td>
                             <td>
                               <div style={{display: 'flex', gap: '0.5rem'}}>
-                                <button style={styles.btnApprove} onClick={() => handleAccept(req.id)}>Accept</button>
+                                <button style={styles.btnApprove} onClick={() => handleAccept(req.id)}>Accept Stock</button>
                                 <button style={styles.btnReject} onClick={() => handleReject(req.id)}>Reject</button>
                               </div>
                             </td>
                           </tr>
                         ))}
-                        {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No incoming shipments.</td></tr>}
+                        {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No incoming stock requests.</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -253,11 +251,11 @@ export default function DistributorDashboard() {
 
               {activeTab === 'inventory' && (
                 <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Available Medicine Stock</h3>
+                  <h3 style={styles.panelTitle}>Warehouse Inventory</h3>
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
                       <thead style={styles.tableHeader}>
-                        <tr><th>Batch #</th><th>Product</th><th>Manufacturer</th><th>In Stock</th></tr>
+                        <tr><th>Batch #</th><th>Product</th><th>Original Manufacturer</th><th>Current Quantity</th></tr>
                       </thead>
                       <tbody>
                         {inventory.map(b => (
@@ -268,34 +266,34 @@ export default function DistributorDashboard() {
                             <td style={{fontWeight: 700, color: '#10b981'}}>{b.quantity} units</td>
                           </tr>
                         ))}
-                        {inventory.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>Your inventory is empty.</td></tr>}
+                        {inventory.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>Warehouse is currently empty.</td></tr>}
                       </tbody>
                     </table>
                   </div>
                 </div>
               )}
 
-              {activeTab === 'suppliers' && (
+              {activeTab === 'pharmacists' && (
                 <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Manage My Suppliers</h3>
-                  <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Whitelisted suppliers can receive medicine shipments from you.</p>
+                  <h3 style={styles.panelTitle}>Manage Partner Pharmacies</h3>
+                  <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Authorize pharmacies to enable medicine transfers to them.</p>
                   <div style={{display: 'flex', gap: '1rem', marginBottom: '2rem'}}>
-                    <select style={{...styles.input, flex: 1}} value={suppToAdd} onChange={e => setSuppToAdd(e.target.value)}>
-                      <option value="">-- Choose Supplier to Add --</option>
-                      {allSuppliers.filter(s => !myWhitelistedSuppliers.includes(s.address.toLowerCase())).map(s => (
-                        <option key={s.address} value={s.address}>{s.name} ({s.address.slice(0,10)}...)</option>
+                    <select style={{...styles.input, flex: 1}} value={pharmToAdd} onChange={e => setPharmToAdd(e.target.value)}>
+                      <option value="">-- Choose Pharmacy to Authorize --</option>
+                      {allPharmacists.filter(p => !myWhitelistedPharms.includes(p.address.toLowerCase())).map(p => (
+                        <option key={p.address} value={p.address}>{p.name} ({p.address.slice(0,10)}...)</option>
                       ))}
                     </select>
-                    <button onClick={handleAddSupplier} style={{...styles.submitBtn, marginTop: 0, padding: '0 2rem'}}>Add Supplier</button>
+                    <button onClick={handleAddPharmacist} style={{...styles.submitBtn, marginTop: 0, padding: '0 2rem'}}>Authorize</button>
                   </div>
                   <div style={styles.tableWrapper}>
                     <table style={styles.table}>
-                      <thead style={styles.tableHeader}><tr><th>Name</th><th>Wallet Address</th><th>Status</th></tr></thead>
+                      <thead style={styles.tableHeader}><tr><th>Pharmacy Name</th><th>Wallet Address</th><th>Status</th></tr></thead>
                       <tbody>
-                        {allSuppliers.filter(s => myWhitelistedSuppliers.includes(s.address.toLowerCase())).map(s => (
-                          <tr key={s.address} style={styles.tableRow}>
-                            <td>{s.name}</td>
-                            <td>{s.address}</td>
+                        {allPharmacists.filter(p => myWhitelistedPharms.includes(p.address.toLowerCase())).map(p => (
+                          <tr key={p.address} style={styles.tableRow}>
+                            <td style={{fontWeight: 600}}>{p.name}</td>
+                            <td>{p.address}</td>
                             <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AUTHORIZED</span></td>
                           </tr>
                         ))}
@@ -307,28 +305,28 @@ export default function DistributorDashboard() {
 
               {activeTab === 'transfer' && (
                 <div style={styles.lightPanel}>
-                  <h3 style={styles.panelTitle}>Initiate Transfer to Supplier</h3>
+                  <h3 style={styles.panelTitle}>Dispatch to Pharmacy</h3>
                   <form onSubmit={handleTransfer} style={styles.formStack}>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Select Batch from Stock</label>
+                      <label style={styles.label}>Select Stock Batch</label>
                       <select style={styles.input} value={transferData.batchNumber} onChange={e => setTransferData({...transferData, batchNumber: e.target.value})} required>
-                        <option value="">-- Select Available Batch --</option>
+                        <option value="">-- Choose Available Batch --</option>
                         {inventory.map(b => (
-                          <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.quantity} available)</option>
+                          <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.quantity} in stock)</option>
                         ))}
                       </select>
                     </div>
                     <div style={styles.formGroup}>
-                      <label style={styles.label}>Receiver Supplier</label>
-                      <select style={styles.input} value={transferData.supplier} onChange={e => setTransferData({...transferData, supplier: e.target.value})} required>
-                        <option value="">-- Select Whitelisted Supplier --</option>
-                        {allSuppliers.filter(s => myWhitelistedSuppliers.includes(s.address.toLowerCase())).map(s => (
-                          <option key={s.address} value={s.address}>{s.name}</option>
+                      <label style={styles.label}>Target Pharmacy</label>
+                      <select style={styles.input} value={transferData.pharmacist} onChange={e => setTransferData({...transferData, pharmacist: e.target.value})} required>
+                        <option value="">-- Select Authorized Pharmacy --</option>
+                        {allPharmacists.filter(p => myWhitelistedPharms.includes(p.address.toLowerCase())).map(p => (
+                          <option key={p.address} value={p.address}>{p.name}</option>
                         ))}
                       </select>
                     </div>
-                    <div style={styles.formGroup}><label style={styles.label}>Quantity</label><input style={styles.input} type="number" value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required/></div>
-                    <button type="submit" style={styles.submitBtn}>Send Stock to Supplier</button>
+                    <div style={styles.formGroup}><label style={styles.label}>Shipment Quantity</label><input style={styles.input} type="number" value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required/></div>
+                    <button type="submit" style={styles.submitBtn}>Initialize Shipment</button>
                   </form>
                 </div>
               )}
@@ -358,7 +356,7 @@ const styles = {
   sidebarBrand: { fontSize: '1.5rem', fontWeight: 800, padding: '0 1.5rem 2rem', color: '#1e293b' },
   nav: { padding: '0 0.75rem' },
   navItem: { display: 'flex', alignItems: 'center', padding: '0.875rem 1rem', borderRadius: '8px', cursor: 'pointer', color: '#64748b', fontWeight: 500, marginBottom: '4px' },
-  navItemActive: { background: '#f1f5f9', color: '#3b82f6' },
+  navItemActive: { background: '#f1f5f9', color: '#8b5cf6' },
   navCount: { background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '10px' },
   navDivider: { padding: '1.5rem 1rem 0.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' },
   main: { flex: 1, height: '100vh', overflowY: 'auto' },
@@ -382,12 +380,12 @@ const styles = {
   formGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
   label: { fontSize: '0.85rem', fontWeight: 600, color: '#475569' },
   input: { padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.9rem' },
-  submitBtn: { padding: '1rem', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', marginTop: '1rem' },
+  submitBtn: { padding: '1rem', background: '#8b5cf6', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer', marginTop: '1rem' },
   btnApprove: { background: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' },
   btnReject: { background: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem' },
-  toast: { background: '#eff6ff', color: '#1e40af', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem', border: '1px solid #bfdbfe' },
+  toast: { background: '#f5f3ff', color: '#5b21b6', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem', border: '1px solid #ddd6fe' },
   loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' },
   userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
-  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#8b5cf6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' },
   userName: { color: '#1e293b', fontWeight: 600, fontSize: '0.9rem' }
 };
