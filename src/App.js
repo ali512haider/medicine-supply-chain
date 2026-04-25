@@ -8,8 +8,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import ManufacturerDashboard from './pages/ManufacturerDashboard';
 import DistributorDashboard from './pages/DistributorDashboard';
 import SupplierDashboard from './pages/SupplierDashboard';
-import VerifyProduct from './pages/VerifyProduct';
 import PharmacistDashboard from './pages/PharmacistDashboard';
+import VerifyProduct from './pages/VerifyProduct';
+import AboutUs from './pages/AboutUs';
+import Contact from './pages/Contact';
 import './App.css';
 
 // Protected Route Component
@@ -17,7 +19,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const { account, role, status } = useWeb3();
 
   if (status === 'idle' || status === 'connecting') {
-    return <div className="container page-content">Loading... Please connect your wallet.</div>;
+    return (
+      <div className="container page-content" style={{ textAlign: 'center', paddingTop: '10rem' }}>
+        <div className="animate-fade-in">
+          <h2>⌛ Connecting to Blockchain...</h2>
+          <p style={{ color: '#64748b' }}>Please ensure your MetaMask wallet is connected.</p>
+        </div>
+      </div>
+    );
   }
 
   if (!account) {
@@ -27,9 +36,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (allowedRoles && !allowedRoles.includes(role)) {
     return (
       <div className="container page-content">
-        <div className="glass-panel" style={{ textAlign: 'center' }}>
-          <h2 style={{ color: 'var(--accent-danger)' }}>Access Denied</h2>
-          <p>You do not have the required role to view this page.</p>
+        <div className="glass-panel" style={{ textAlign: 'center', marginTop: '4rem' }}>
+          <h2 style={{ color: 'var(--accent-danger)' }}>🚫 Access Denied</h2>
+          <p style={{ color: '#64748b' }}>You do not have the required permissions ({allowedRoles.join(', ')}) to view this dashboard.</p>
+          <button onClick={() => window.history.back()} className="btn btn-outline" style={{ marginTop: '1.5rem' }}>Go Back</button>
         </div>
       </div>
     );
@@ -43,63 +53,68 @@ function AppContent() {
     <div className="App">
       <Navbar />
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/verify" element={<VerifyProduct />} />
-
-        <Route
-          path="/register"
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/contact" element={<Contact />} />
+        
+        {/* Register is Public but handled via ProtectedRoute for wallet connection check */}
+        <Route 
+          path="/register" 
           element={
             <ProtectedRoute>
               <Register />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/admin"
+        
+        {/* Role-Based Private Routes */}
+        <Route 
+          path="/admin" 
           element={
             <ProtectedRoute allowedRoles={['Admin']}>
               <AdminDashboard />
             </ProtectedRoute>
-          }
+          } 
         />
-
-        <Route
-          path="/manufacturer"
+        
+        <Route 
+          path="/manufacturer" 
           element={
             <ProtectedRoute allowedRoles={['Manufacturer']}>
               <ManufacturerDashboard />
             </ProtectedRoute>
-          }
+          } 
         />
 
-        <Route
-          path="/distributor"
+        <Route 
+          path="/distributor" 
           element={
             <ProtectedRoute allowedRoles={['Distributor']}>
               <DistributorDashboard />
             </ProtectedRoute>
-          }
+          } 
         />
 
-        <Route
-          path="/supplier"
+        <Route 
+          path="/supplier" 
           element={
             <ProtectedRoute allowedRoles={['Supplier']}>
               <SupplierDashboard />
             </ProtectedRoute>
-          }
+          } 
         />
 
-        <Route
-          path="/pharmacist"
+        <Route 
+          path="/pharmacist" 
           element={
             <ProtectedRoute allowedRoles={['Pharmacist']}>
               <PharmacistDashboard />
             </ProtectedRoute>
-          }
+          } 
         />
-
+        
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
