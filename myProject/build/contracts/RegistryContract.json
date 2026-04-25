@@ -16448,12 +16448,12 @@
         }
       },
       "links": {},
-      "address": "0xee6720C905DCE3E5673461eb9Cc3004512BBe840",
-      "transactionHash": "0x92d0c371f78b0d61300fb4fe7cdddb2d8231aa6b2f5e775044c91cb746aceb09"
+      "address": "0x8400685d2CA5CFAb2fcEc4854E12a945272a0c1E",
+      "transactionHash": "0x237ddebe84ddf2b40d0e8f3467e51d3d2ef0cd6cbaea621dcee6ddc1c60f9aa8"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2026-04-25T20:28:19.424Z",
+  "updatedAt": "2026-04-25T20:34:59.874Z",
   "networkType": "ethereum",
   "devdoc": {
     "details": "Deploy this contract first; pass its address to the         constructor of ProductContract, TransferContract and         TraceContract.",
