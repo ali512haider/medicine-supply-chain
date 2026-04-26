@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWeb3 } from '../context/Web3Context';
+import Modal from '../components/Modal';
+import QRCodeDisplay from '../components/QRCodeDisplay';
+import QRScanner from '../components/QRScanner';
 
 // --- Professional Emerald SVG Icons ---
 const Icons = {
@@ -10,22 +13,25 @@ const Icons = {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
   ),
   Inventory: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
-  ),
-  Suppliers: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
   ),
   Transfer: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
   ),
-  Receipt: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 17.5V6.5"></path></svg>
+  Suppliers: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+  ),
+  Menu: () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
   ),
   LogOut: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
   ),
-  Menu: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+  Trash: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+  ),
+  Scanner: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
   )
 };
 
@@ -37,20 +43,27 @@ export default function DistributorDashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const invoiceRef = useRef();
 
-  // Data State
-  const [inbox, setInbox] = useState([]);
-  const [inventory, setInventory] = useState([]);
-  const [allSuppliers, setAllSuppliers] = useState([]);
-  const [mySuppliers, setMySuppliers] = useState([]);
+  // State
   const [stats, setStats] = useState({ incoming: 0, stock: 0, sent: 0 });
+  const [inbox, setInbox] = useState([]);
+  const [stock, setStock] = useState([]);
+  const [mySuppliers, setMySuppliers] = useState([]);
+  const [allSuppliers, setAllSuppliers] = useState([]);
   const [actionMsg, setActionMsg] = useState('');
 
-  // Form States
-  const [transferData, setTransferData] = useState({ batchNumber: '', supplier: '', quantity: '', price: '0' });
-  const [suppToAdd, setSuppToAdd] = useState('');
+  // QR States
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scannerTarget, setScannerTarget] = useState(null); // 'inbox' or 'shipment'
+
+  // Forms
+  const [supToAdd, setSupToAdd] = useState('');
+  
+  // Multi-Batch Shipment State
+  const [shipmentRecipient, setShipmentRecipient] = useState('');
+  const [shipmentItems, setShipmentItems] = useState([]);
+  const [selectedBatch, setSelectedBatch] = useState('');
   const [lastInvoice, setLastInvoice] = useState(null);
 
-  // Handle Resize
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
@@ -62,122 +75,176 @@ export default function DistributorDashboard() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!contracts.transfer || !account) return;
+    if (!contracts.transfer || !contracts.product || !contracts.registry || !account) return;
     setLoading(true);
     try {
-      const pending = await contracts.transfer.getMyPendingInbox();
-      setInbox(pending);
+      const bNos = await contracts.product.getAllBatchNumbers();
       
-      const stockIds = await contracts.product.getAvailableStockBatches(account);
-      const stockList = [];
-      for (let id of stockIds) {
-        const b = await contracts.product.getBatch(id);
-        const qty = await contracts.product.getStockOf(id, account);
-        if (Number(qty) > 0) {
-          stockList.push({
-            batchNumber: b.batchNumber,
+      const inRequests = await contracts.transfer.getMyPendingInbox();
+      const inboxWithNames = [];
+      for (let req of inRequests) {
+        try {
+          const b = await contracts.product.getBatch(req.batchNumber);
+          inboxWithNames.push({
+            id: req.id,
+            batchNumber: req.batchNumber,
             productName: b.productName,
-            quantity: qty.toString(),
+            sender: req.sender,
+            quantity: req.quantity.toString()
+          });
+        } catch (e) {
+          inboxWithNames.push({ ...req, productName: 'Unknown' });
+        }
+      }
+      setInbox(inboxWithNames);
+
+      const stockList = [];
+      for (let bn of bNos) {
+        const qty = await contracts.product.getStockOf(bn, account);
+        if (Number(qty) > 0) {
+          const b = await contracts.product.getBatch(bn);
+          stockList.push({ 
+            batchNumber: bn, 
+            productName: b.productName, 
+            quantity: qty.toString(), 
             price: b.costPerUnit.toString(),
-            currency: b.currency
+            currency: b.currency 
           });
         }
       }
-      setInventory(stockList);
+      setStock(stockList);
 
-      const sentCount = await contracts.transfer.getSentTransfers(account);
-      setStats({ incoming: pending.length, stock: stockList.length, sent: sentCount.length });
+      const sentIds = await contracts.transfer.getSentTransfers(account);
+      setStats({ incoming: inRequests.length, stock: stockList.length, sent: sentIds.length });
+
+      const mySups = await contracts.transfer.getSuppliers(account);
+      setMySuppliers(mySups.map(s => s.toLowerCase()));
 
       const allAddrs = await contracts.registry.getAllRegistered();
-      const supps = [];
+      const sups = [];
       for (let addr of allAddrs) {
         const entity = await contracts.registry.getEntity(addr);
         if (Number(entity.role) === 4 && Number(entity.status) === 2) {
-          supps.push({ address: addr, name: entity.name });
+          sups.push({ address: addr, name: entity.name });
         }
       }
-      setAllSuppliers(supps);
+      setAllSuppliers(sups);
 
-      const myS = await contracts.transfer.getSuppliers(account);
-      setMySuppliers(myS.map(d => d.toLowerCase()));
-
-    } catch (err) {
-      console.error(err);
-      setActionMsg('❌ Sync Error');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error("Distributor Sync Error:", err); }
+    finally { setLoading(false); }
   }, [contracts.transfer, contracts.product, contracts.registry, account]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleAccept = async (id) => {
+  const handleAcceptTransfer = async (id) => {
     try {
-      setActionMsg('⏳ Receiving Stock...');
-      const tx = await contracts.transfer.acceptTransfer(id, "Received at Distributor");
+      setActionMsg('⏳ Finalizing Custody...');
+      const tx = await contracts.transfer.acceptTransfer(id, "Received via QR Validation");
       await tx.wait();
-      setActionMsg('✅ Stock Added!');
+      setActionMsg('✅ Stock Added to Warehouse');
       fetchData();
     } catch (err) { setActionMsg('❌ Error'); }
   };
 
-  const handleAddSupplier = async () => {
-    if (!suppToAdd) return;
-    try {
-      setActionMsg('⏳ Authorizing...');
-      const tx = await contracts.transfer.addSupplier(suppToAdd);
-      await tx.wait();
-      setActionMsg('✅ Supplier Added!');
-      setSuppToAdd('');
-      fetchData();
-    } catch (err) { setActionMsg('❌ Auth Failed'); }
+  const onScanSuccess = (decodedText) => {
+    setIsScannerOpen(false);
+    const scannedBatch = decodedText.trim();
+    
+    if (scannerTarget === 'inbox') {
+      const match = inbox.find(req => req.batchNumber === scannedBatch);
+      if (match) {
+        handleAcceptTransfer(match.id);
+      } else {
+        setActionMsg('⚠️ Scanned Batch not in Arrivals');
+      }
+    } else if (scannerTarget === 'shipment') {
+      const match = stock.find(b => b.batchNumber === scannedBatch);
+      if (match) {
+        setSelectedBatch(scannedBatch);
+        addBatchToShipmentByValue(scannedBatch);
+      } else {
+        setActionMsg('⚠️ Batch not in Warehouse');
+      }
+    }
   };
 
-  const handleTransfer = async (e) => {
-    e.preventDefault();
-    try {
-      setActionMsg('⏳ Transferring...');
-      const batch = inventory.find(i => i.batchNumber === transferData.batchNumber);
-      const supplier = allSuppliers.find(s => s.address === transferData.supplier);
-      const qty = window.BigInt(transferData.quantity);
-      const price = window.BigInt(transferData.price === '0' ? batch.price : transferData.price);
+  const addBatchToShipmentByValue = (bn) => {
+    const item = stock.find(b => b.batchNumber === bn);
+    if (!item) return;
+    if (shipmentItems.find(i => i.batchNumber === bn)) return;
 
-      const tx = await contracts.transfer.requestTransfer(
-        1, // DIST_TO_SUPP
-        transferData.batchNumber,
-        transferData.supplier,
-        qty,
-        price,
-        batch.currency,
-        "Shipment from Distributor"
-      );
-      await tx.wait();
+    setShipmentItems(prev => [...prev, {
+      batchNumber: item.batchNumber,
+      productName: item.productName,
+      quantity: '',
+      price: item.price,
+      currency: item.currency
+    }]);
+  };
+
+  const addBatchToShipment = () => {
+    if (!selectedBatch) return;
+    addBatchToShipmentByValue(selectedBatch);
+    setSelectedBatch('');
+  };
+
+  const removeBatchFromShipment = (bn) => {
+    setShipmentItems(shipmentItems.filter(i => i.batchNumber !== bn));
+  };
+
+  const updateShipmentItem = (bn, field, value) => {
+    setShipmentItems(shipmentItems.map(i => i.batchNumber === bn ? { ...i, [field]: value } : i));
+  };
+
+  const handleBulkTransfer = async (e) => {
+    if (e) e.preventDefault();
+    if (!shipmentRecipient || shipmentItems.length === 0) {
+      setActionMsg('⚠️ Select a supplier and at least one batch');
+      return;
+    }
+
+    try {
+      setActionMsg('⏳ Committing Shipment to Ledger...');
+      const supplier = allSuppliers.find(s => s.address.toLowerCase() === shipmentRecipient.toLowerCase());
+      const results = [];
+
+      for (const item of shipmentItems) {
+        const nQty = Number(item.quantity);
+        const nPrice = Number(item.price);
+        if (isNaN(nQty) || nQty <= 0) continue;
+
+        setActionMsg(`⏳ Shipping ${item.productName}...`);
+        const qtyBI = window.BigInt(Math.floor(nQty));
+        const priceBI = window.BigInt(Math.floor(nPrice || 0));
+
+        const tx = await contracts.transfer.requestTransfer(1, item.batchNumber, shipmentRecipient, qtyBI, priceBI, item.currency || 'PKR', "Wholesale Supply Shipment");
+        await tx.wait();
+        results.push({ ...item, total: nQty * nPrice });
+      }
+
+      if (results.length === 0) return;
 
       setLastInvoice({
-        type: 'B2B Delivery Note',
-        receiver: supplier.name,
-        receiverAddr: transferData.supplier,
-        product: batch.productName,
-        batch: batch.batchNumber,
-        qty: transferData.quantity,
-        price: price.toString(),
-        total: Number(transferData.quantity) * Number(price),
-        currency: batch.currency,
+        type: 'Wholesale Shipment Manifest',
+        receiver: supplier?.name || 'Authorized Supplier',
+        receiverAddr: shipmentRecipient,
+        items: results,
+        grandTotal: results.reduce((sum, i) => sum + i.total, 0),
+        currency: results[0]?.currency || 'PKR',
         date: new Date().toLocaleString()
       });
 
-      setActionMsg('✅ Shipment Requested!');
-      setTransferData({ batchNumber: '', supplier: '', quantity: '', price: '0' });
+      setActionMsg('✅ Shipment Success!');
+      setShipmentItems([]);
+      setShipmentRecipient('');
       fetchData();
       setActiveTab('invoice');
-    } catch (err) { setActionMsg('❌ ' + (err.reason || 'Failed')); }
+    } catch (err) { setActionMsg('❌ Failed'); }
   };
 
-  const printInvoice = () => {
+  const printNote = () => {
     const WindowPrt = window.open('', '', 'left=0,top=0,width=800,height=900');
-    WindowPrt.document.write('<html><head><title>Invoice</title><style>body{font-family:sans-serif;padding:40px;} .header{text-align:center;margin-bottom:40px;color:#10b981;} .total{border-top:2px solid #333;padding-top:10px;margin-top:20px;font-weight:bold;font-size:1.2rem;text-align:right;}</style></head><body>');
+    WindowPrt.document.write('<html><head><title>Wholesale Manifest</title><style>body{font-family:sans-serif;padding:40px;color:#0f172a;} .header{text-align:center;margin-bottom:40px;color:#10b981;border-bottom:2px solid #f1f5f9;padding-bottom:20px;}</style></head><body>');
     WindowPrt.document.write(invoiceRef.current.innerHTML);
     WindowPrt.document.write('</body></html>');
     WindowPrt.document.close();
@@ -188,168 +255,179 @@ export default function DistributorDashboard() {
 
   return (
     <div style={styles.dashboardWrapper}>
-      {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
+      <QRScanner 
+        isOpen={isScannerOpen} 
+        onClose={() => setIsScannerOpen(false)} 
+        onScanSuccess={onScanSuccess} 
+        onScanError={() => {}} 
+      />
 
+      {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
-        <div style={styles.sidebarBrand}>
-          <span style={{ color: 'var(--accent-primary)' }}>MediTrace</span>
-          <span style={styles.roleTag}>Distributor</span>
-        </div>
+        <div style={styles.sidebarBrand}><span style={{ color: 'var(--accent-primary)' }}>MediTrace</span><span style={styles.roleTag}>Distributor</span></div>
         <nav style={styles.nav}>
-          <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Dashboard" />
-          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="Incoming Stock" count={stats.incoming} />
-          <NavItem active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} Icon={Icons.Inventory} label="Active Stock" />
-          <div style={styles.navDivider}>Supply Chain</div>
-          <NavItem active={activeTab === 'suppliers'} onClick={() => setActiveTab('suppliers')} Icon={Icons.Suppliers} label="Manage Suppliers" />
-          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Ship Products" />
-          {lastInvoice && <NavItem active={activeTab === 'invoice'} onClick={() => setActiveTab('invoice')} Icon={Icons.Receipt} label="Last Invoice" />}
+          <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Logistics Hub" />
+          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="Arrivals" count={stats.incoming} />
+          <NavItem active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} Icon={Icons.Inventory} label="Warehouse Stock" />
+          <div style={styles.navDivider}>Network</div>
+          <NavItem active={activeTab === 'suppliers'} onClick={() => setActiveTab('suppliers')} Icon={Icons.Suppliers} label="Authorize Suppliers" />
+          <NavItem active={activeTab === 'transfer'} onClick={() => setActiveTab('transfer')} Icon={Icons.Transfer} label="Outbound Shipments" />
         </nav>
-        <div style={styles.sidebarFooter}>
-           <button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
-        </div>
+        <div style={styles.sidebarFooter}><button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button></div>
       </div>
 
       <div style={{ ...styles.main, marginLeft: isMobile ? '0' : '280px' }}>
         <header style={styles.header}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {isMobile && <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.iconBtn}><Icons.Menu /></button>}
-              <h1 style={styles.headerTitle}>{activeTab.replace('-', ' ').toUpperCase()}</h1>
-           </div>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
-              <div style={styles.userProfile}>
-                 <div style={styles.avatar}>{account?.slice(2,4).toUpperCase()}</div>
-                 {!isMobile && <span style={styles.userName}>Distributor Node</span>}
-              </div>
-           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {isMobile && <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.iconBtn}><Icons.Menu /></button>}
+            <h1 style={styles.headerTitle}>{activeTab.replace('-', ' ').toUpperCase()}</h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
+            <div style={styles.userProfile}><div style={styles.avatar}>DI</div>{!isMobile && <span style={styles.userName}>Distributor Node</span>}</div>
+          </div>
         </header>
 
         <div style={styles.content} className="animate-fade-in">
-           {loading ? (
-              <div style={styles.loadingContainer}>⌛ Syncing...</div>
-           ) : (
-             <>
-               {activeTab === 'overview' && (
-                 <div style={styles.statsGrid}>
-                   <StatCard title="Inbound Pending" value={stats.incoming} Icon={Icons.Inbox} color="#10b981" />
-                   <StatCard title="Stock Batches" value={stats.stock} Icon={Icons.Inventory} color="#3b82f6" />
-                   <StatCard title="Total Shipments" value={stats.sent} Icon={Icons.Transfer} color="#6366f1" />
-                 </div>
-               )}
+          {loading ? ( <div style={styles.loadingContainer}>⌛ Syncing Ledger...</div> ) : (
+            <>
+              {activeTab === 'overview' && (
+                <div style={styles.statsGrid}>
+                  <StatCard title="Inbound Requests" value={stats.incoming} Icon={Icons.Inbox} color="#10b981" />
+                  <StatCard title="Unique Batches" value={stats.stock} Icon={Icons.Inventory} color="#3b82f6" />
+                  <StatCard title="Total Shipments" value={stats.sent} Icon={Icons.Transfer} color="#6366f1" />
+                </div>
+              )}
 
-               {activeTab === 'inbox' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Pending Deliveries from Manufacturers</h3>
-                    <div style={styles.tableWrapper}>
-                      <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Sender</th><th>Quantity</th><th>Date</th><th>Action</th></tr></thead>
-                        <tbody>
-                          {inbox.map(req => (
-                            <tr key={req.id.toString()} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{req.batchNumber}</td>
-                              <td>{req.sender.slice(0,12)}...</td>
-                              <td>{req.quantity.toString()}</td>
-                              <td>{new Date(Number(req.createdAt)*1000).toLocaleDateString()}</td>
-                              <td><button className="btn btn-primary" style={{padding: '0.4rem 1rem', fontSize: '0.8rem'}} onClick={() => handleAccept(req.id)}>Accept</button></td>
-                            </tr>
-                          ))}
-                          {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No pending stock.</td></tr>}
-                        </tbody>
-                      </table>
-                    </div>
-                 </div>
-               )}
+              {activeTab === 'inbox' && (
+                <div className="glass-panel">
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                    <h3 style={{margin: 0, fontSize: '1.2rem'}}>Incoming Stock Transfers</h3>
+                    <button onClick={() => { setScannerTarget('inbox'); setIsScannerOpen(true); }} className="btn btn-outline" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: '#10b981', color: '#10b981'}}>
+                      <Icons.Scanner /> Scan to Accept
+                    </button>
+                  </div>
+                  <table style={styles.table}>
+                    <thead><tr style={styles.tableHeader}><th>Medicine</th><th>Batch #</th><th>Sender</th><th>Quantity</th><th>Action</th></tr></thead>
+                    <tbody>
+                      {inbox.map(req => (
+                        <tr key={req.id.toString()} style={styles.tableRow}>
+                          <td style={{fontWeight: 700}}>{req.productName}</td>
+                          <td>{req.batchNumber}</td>
+                          <td style={{fontSize: '0.8rem'}}>{req.sender.slice(0,10)}...</td>
+                          <td>{req.quantity}</td>
+                          <td><button onClick={() => handleAcceptTransfer(req.id)} className="btn btn-primary" style={{padding: '4px 12px', fontSize: '0.8rem'}}>Accept</button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-               {activeTab === 'inventory' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Available Medicine Inventory</h3>
-                    <div style={styles.tableWrapper}>
-                      <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Price</th><th>Units In Stock</th></tr></thead>
-                        <tbody>
-                          {inventory.map(b => (
-                            <tr key={b.batchNumber} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{b.batchNumber}</td>
-                              <td>{b.productName}</td>
-                              <td>{b.price} {b.currency}</td>
-                              <td style={{fontWeight: 700, color: '#10b981'}}>{b.quantity} units</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                 </div>
-               )}
+              {activeTab === 'inventory' && (
+                <div className="glass-panel">
+                  <h3 style={styles.panelTitle}>Available Warehouse Inventory</h3>
+                  <table style={styles.table}>
+                    <thead><tr style={styles.tableHeader}><th>Batch QR</th><th>Product Name</th><th>Batch Number</th><th>In-Stock</th></tr></thead>
+                    <tbody>
+                      {stock.map(b => (
+                        <tr key={b.batchNumber} style={styles.tableRow}>
+                          <td style={{padding: '10px'}}><QRCodeDisplay value={b.batchNumber} size={60} showActions={true} /></td>
+                          <td style={{fontWeight: 700}}>{b.productName}</td>
+                          <td>{b.batchNumber}</td>
+                          <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>{b.quantity} units</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-               {activeTab === 'suppliers' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Whitelisted Supplier Network</h3>
-                    <div style={{display: 'flex', gap: '1rem', marginBottom: '2.5rem'}}>
-                      <select style={styles.input} value={suppToAdd} onChange={e => setSuppToAdd(e.target.value)}>
-                        <option value="">-- Choose Supplier to Add --</option>
-                        {allSuppliers.filter(s => !mySuppliers.includes(s.address.toLowerCase())).map(s => (
-                          <option key={s.address} value={s.address}>{s.name} ({s.address.slice(0,12)}...)</option>
-                        ))}
+              {activeTab === 'transfer' && (
+                <div className="glass-panel" style={{maxWidth: '900px'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                    <h3 style={{margin: 0, fontSize: '1.2rem'}}>Wholesale Distribution Shipment</h3>
+                    <button onClick={() => { setScannerTarget('shipment'); setIsScannerOpen(true); }} className="btn btn-outline" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: '#10b981', color: '#10b981'}}>
+                      <Icons.Scanner /> Scan to Add
+                    </button>
+                  </div>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem'}}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>1. Select Target Supplier</label>
+                      <select style={styles.input} value={shipmentRecipient} onChange={e => setShipmentRecipient(e.target.value)}>
+                        <option value="">-- Choose Recipient --</option>
+                        {allSuppliers.filter(s => mySuppliers.includes(s.address.toLowerCase())).map(s => <option key={s.address} value={s.address}>{s.name}</option>)}
                       </select>
-                      <button onClick={handleAddSupplier} className="btn btn-primary">Authorize Supplier</button>
                     </div>
-                    <div style={styles.tableWrapper}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>2. Add Stock to Shipment</label>
+                      <div style={{display: 'flex', gap: '0.5rem'}}>
+                        <select style={styles.input} value={selectedBatch} onChange={e => setSelectedBatch(e.target.value)}>
+                          <option value="">-- Select Medicine Batch --</option>
+                          {stock.filter(b => Number(b.quantity) > 0 && !shipmentItems.find(i => i.batchNumber === b.batchNumber)).map(b => (
+                            <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.batchNumber})</option>
+                          ))}
+                        </select>
+                        <button onClick={addBatchToShipment} className="btn btn-outline" style={{borderColor: '#10b981', color: '#10b981'}}>Add</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {shipmentItems.length > 0 && (
+                    <div style={{marginBottom: '2rem'}}>
+                      <h4 style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem'}}>Shipment Manifest</h4>
                       <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Supplier Name</th><th>Address</th><th>Status</th></tr></thead>
+                        <thead><tr style={styles.tableHeader}><th>Medicine</th><th>Quantity</th><th>Unit Price</th><th>Subtotal</th><th></th></tr></thead>
                         <tbody>
-                          {allSuppliers.filter(s => mySuppliers.includes(s.address.toLowerCase())).map(s => (
-                            <tr key={s.address} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{s.name}</td><td>{s.address}</td><td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AUTHORIZED</span></td>
+                          {shipmentItems.map(item => (
+                            <tr key={item.batchNumber} style={styles.tableRow}>
+                              <td><div style={{fontWeight: 700}}>{item.productName}</div><div style={{fontSize: '0.7rem'}}>{item.batchNumber}</div></td>
+                              <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '100px'}} placeholder="Qty" value={item.quantity} onChange={e => updateShipmentItem(item.batchNumber, 'quantity', e.target.value)} /></td>
+                              <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '100px'}} placeholder="Price" value={item.price} onChange={e => updateShipmentItem(item.batchNumber, 'price', e.target.value)} /></td>
+                              <td>{Number(item.quantity || 0) * Number(item.price || 0)} {item.currency}</td>
+                              <td><button onClick={() => removeBatchFromShipment(item.batchNumber)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Icons.Trash /></button></td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                      <button onClick={handleBulkTransfer} className="btn btn-primary" style={{marginTop: '2rem', width: '100%'}}>Commit Dispatch to Ledger</button>
                     </div>
-                 </div>
-               )}
+                  )}
+                </div>
+              )}
 
-               {activeTab === 'transfer' && (
-                 <div className="glass-panel" style={{maxWidth: '600px'}}>
-                   <h3 style={styles.panelTitle}>Initialize Stock Transfer</h3>
-                   <form onSubmit={handleTransfer} style={styles.formStack}>
-                      <div style={styles.formGroup}><label style={styles.label}>Select Batch</label>
-                        <select style={styles.input} value={transferData.batchNumber} onChange={e => setTransferData({...transferData, batchNumber: e.target.value})} required>
-                          <option value="">-- Choose Batch --</option>
-                          {inventory.map(b => <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.quantity} avail)</option>)}
-                        </select>
-                      </div>
-                      <div style={styles.formGroup}><label style={styles.label}>Receiver Supplier</label>
-                        <select style={styles.input} value={transferData.supplier} onChange={e => setTransferData({...transferData, supplier: e.target.value})} required>
-                          <option value="">-- Choose Authorized Supplier --</option>
-                          {allSuppliers.filter(s => mySuppliers.includes(s.address.toLowerCase())).map(s => <option key={s.address} value={s.address}>{s.name}</option>)}
-                        </select>
-                      </div>
-                      <div style={styles.formGroup}><label style={styles.label}>Quantity</label><input type="number" style={styles.input} value={transferData.quantity} onChange={e => setTransferData({...transferData, quantity: e.target.value})} required /></div>
-                      <div style={styles.formGroup}><label style={styles.label}>Transfer Price (0 for default)</label><input type="number" style={styles.input} value={transferData.price} onChange={e => setTransferData({...transferData, price: e.target.value})} /></div>
-                      <button type="submit" className="btn btn-primary" style={{width: '100%', marginTop: '1rem'}}>Send Products</button>
-                   </form>
-                 </div>
-               )}
-
-               {activeTab === 'invoice' && lastInvoice && (
-                 <div className="glass-panel">
-                    <div ref={invoiceRef} style={{padding: '30px', background: 'white', border: '1px solid #e2e8f0'}}>
-                       <div style={{textAlign: 'center', marginBottom: '30px'}}><h2 style={{color: '#10b981', margin: 0}}>DISTRIBUTION INVOICE</h2><p style={{fontSize: '0.8rem', color: '#64748b'}}>Blockchain Verified Transfer</p></div>
-                       <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '30px'}}>
-                          <div><strong>From:</strong> Distributor ({account.slice(0,10)}...)<br/><strong>To:</strong> {lastInvoice.receiver} ({lastInvoice.receiverAddr.slice(0,10)}...)</div>
-                          <div style={{textAlign: 'right'}}><strong>Date:</strong> {lastInvoice.date}<br/><strong>Batch:</strong> {lastInvoice.batch}</div>
-                       </div>
-                       <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                          <thead><tr style={{borderBottom: '2px solid #0f172a', textAlign: 'left'}}><th style={{padding: '8px'}}>Medicine</th><th>Qty</th><th>Unit Price</th><th style={{textAlign: 'right'}}>Total</th></tr></thead>
-                          <tbody><tr><td style={{padding: '12px 8px'}}>{lastInvoice.product}</td><td>{lastInvoice.qty}</td><td>{lastInvoice.price}</td><td style={{textAlign: 'right'}}>{lastInvoice.total} {lastInvoice.currency}</td></tr></tbody>
-                       </table>
-                       <div className="total">Grand Total: {lastInvoice.total} {lastInvoice.currency}</div>
-                    </div>
-                    <button onClick={printInvoice} className="btn btn-primary" style={{marginTop: '2rem'}}>Print Invoice</button>
-                 </div>
-               )}
-             </>
-           )}
+              {activeTab === 'invoice' && lastInvoice && (
+                <div className="glass-panel">
+                  <div ref={invoiceRef} style={{padding: '40px', background: 'white', border: '1px solid #e2e8f0'}}>
+                     <div style={{textAlign: 'center', marginBottom: '40px', borderBottom: '2px solid #10b981', paddingBottom: '20px'}}>
+                        <h2 style={{margin: 0, color: '#10b981'}}>{lastInvoice.type}</h2>
+                        <p style={{fontSize: '0.8rem', color: '#64748b'}}>MediTrace Blockchain Verified Distribution</p>
+                     </div>
+                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '40px', fontSize: '0.9rem'}}>
+                        <div><strong>RECIPIENT SUPPLIER:</strong><br/>{lastInvoice.receiver}<br/>{lastInvoice.receiverAddr}</div>
+                        <div style={{textAlign: 'right'}}><strong>DISPATCH DATE:</strong><br/>{lastInvoice.date}<br/><strong>MANIFEST #:</strong> WH-{Math.floor(Math.random()*100000)}</div>
+                     </div>
+                     <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '30px'}}>
+                        <thead><tr style={{borderBottom: '2px solid #0f172a', textAlign: 'left', fontSize: '0.8rem'}}><th style={{padding: '10px'}}>Item</th><th>Batch #</th><th>Quantity</th><th>Unit Price</th><th style={{textAlign: 'right'}}>Subtotal</th></tr></thead>
+                        <tbody>
+                          {lastInvoice.items.map((item, idx) => (
+                            <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}><td style={{padding: '12px 10px'}}>{item.productName}</td><td>{item.batchNumber}</td><td>{item.quantity}</td><td>{item.price}</td><td style={{textAlign: 'right'}}>{item.total} {item.currency}</td></tr>
+                          ))}
+                        </tbody>
+                     </table>
+                     <div style={{textAlign: 'right', fontSize: '1.2rem', fontWeight: 800}}>GRAND TOTAL: {lastInvoice.grandTotal} {lastInvoice.currency}</div>
+                     <div style={{marginTop: '60px', borderTop: '1px solid #e2e8f0', paddingTop: '20px', fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center'}}>
+                        Wholesale Distribution verified on-chain. Recipient must accept custody to finalize movement.
+                     </div>
+                  </div>
+                  <div style={{display: 'flex', gap: '1rem', marginTop: '2rem'}}>
+                    <button onClick={printNote} className="btn btn-primary">Print Manifest</button>
+                    <button onClick={() => setActiveTab('transfer')} className="btn btn-outline">New Shipment</button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -361,48 +439,43 @@ const NavItem = ({ active, onClick, Icon, label, count }) => (
 );
 
 const StatCard = ({ title, value, Icon, color }) => (
-  <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}>
-    <div style={{ ...styles.statIconContainer, color: color, background: `${color}10` }}><Icon /></div>
-    <div><div style={styles.statTitle}>{title}</div><div style={styles.statValue}>{value}</div></div>
-  </div>
+  <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}><div style={{ ...styles.statIconContainer, color: color, background: `${color}10` }}><Icon /></div><div><div style={styles.statTitle}>{title}</div><div style={styles.statValue}>{value}</div></div></div>
 );
 
 const styles = {
   dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f8fafc', position: 'fixed', inset: 0, zIndex: 10 },
-  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#0f172a', display: 'flex', flexDirection: 'column', zIndex: 100, transition: 'left 0.3s ease' },
+  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#0f172a', display: 'flex', flexDirection: 'column', zIndex: 100 },
   sidebarOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 90 },
-  sidebarBrand: { padding: '2.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '4px' },
-  roleTag: { color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' },
+  sidebarBrand: { padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', color: 'white', fontWeight: 800, fontSize: '1.4rem' },
+  roleTag: { color: '#94a3b8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' },
   nav: { flex: 1, padding: '0 1rem' },
-  navItem: { display: 'flex', alignItems: 'center', padding: '0.875rem 1.25rem', borderRadius: '10px', cursor: 'pointer', color: '#94a3b8', transition: 'all 0.2s ease', marginBottom: '4px' },
+  navItem: { display: 'flex', alignItems: 'center', padding: '0.8rem 1rem', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', marginBottom: '4px' },
   navItemActive: { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' },
   navCount: { background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '99px', fontWeight: 700 },
-  navDivider: { padding: '1.5rem 1.25rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' },
+  navDivider: { padding: '1.5rem 1rem 0.5rem', fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' },
   sidebarFooter: { padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' },
-  logoutBtn: { width: '100%', padding: '0.75rem', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontSize: '0.9rem' },
-  main: { flex: 1, height: '100vh', overflowY: 'auto' },
-  header: { height: '80px', background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
-  headerTitle: { fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 },
-  iconBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' },
-  toast: { background: '#f0fdf4', color: '#059669', padding: '0.5rem 1.25rem', borderRadius: '99px', fontSize: '0.85rem', fontWeight: 600, border: '1px solid #d1fae5' },
-  userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
-  avatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
-  userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.95rem' },
-  content: { padding: '2.5rem' },
+  logoutBtn: { width: '100%', padding: '0.6rem', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  main: { flex: 1, height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' },
+  header: { height: '70px', background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
+  headerTitle: { fontSize: '1rem', fontWeight: 800, color: '#0f172a' },
+  iconBtn: { background: 'none', border: 'none', cursor: 'pointer' },
+  toast: { background: '#f0fdf4', color: '#059669', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem', fontWeight: 600 },
+  userProfile: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
+  userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' },
+  content: { padding: '2rem', flex: 1 },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' },
-  statCard: { background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1.25rem', alignItems: 'center' },
-  statIconContainer: { width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  statTitle: { color: '#64748b', fontSize: '0.85rem', fontWeight: 500 },
-  statValue: { fontSize: '1.75rem', fontWeight: 800, color: '#0f172a' },
-  panelTitle: { fontSize: '1.25rem', color: '#0f172a', marginBottom: '2rem', marginTop: 0 },
-  tableWrapper: { overflowX: 'auto' },
+  statCard: { background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1rem', alignItems: 'center' },
+  statIconContainer: { width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  statTitle: { color: '#64748b', fontSize: '0.8rem' },
+  statValue: { fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' },
+  panelTitle: { fontSize: '1.2rem', color: '#0f172a', marginBottom: '1.5rem', fontWeight: 700 },
   table: { width: '100%', borderCollapse: 'collapse' },
-  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.7rem', textTransform: 'uppercase', padding: '12px' },
   tableRow: { borderBottom: '1px solid #f1f5f9' },
   badge: { padding: '4px 12px', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700 },
-  formStack: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
   formGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  label: { fontSize: '0.85rem', fontWeight: 700, color: '#475569' },
-  input: { padding: '0.875rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: '0.95rem' },
+  label: { fontSize: '0.8rem', fontWeight: 700, color: '#475569' },
+  input: { padding: '0.7rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc' },
   loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' }
 };

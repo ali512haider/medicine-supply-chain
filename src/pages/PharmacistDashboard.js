@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWeb3 } from '../context/Web3Context';
+import QRCodeDisplay from '../components/QRCodeDisplay';
+import QRScanner from '../components/QRScanner';
 
 // --- Professional Emerald SVG Icons ---
 const Icons = {
@@ -9,23 +11,26 @@ const Icons = {
   Inbox: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
   ),
-  Sell: () => (
+  Inventory: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+  ),
+  Sale: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
   ),
-  Stock: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+  History: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
   ),
-  Receipt: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 17.5V6.5"></path></svg>
-  ),
-  Alert: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+  Menu: () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
   ),
   LogOut: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
   ),
-  Menu: () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+  Trash: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+  ),
+  Scanner: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
   )
 };
 
@@ -37,15 +42,21 @@ export default function PharmacistDashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const invoiceRef = useRef();
 
-  // Data State
+  // State
+  const [stats, setStats] = useState({ stock: 0, sales: 0, incoming: 0 });
   const [inbox, setInbox] = useState([]);
   const [inventory, setInventory] = useState([]);
-  const [sales, setSales] = useState([]);
-  const [stats, setStats] = useState({ items: 0, stock: 0, revenue: 0 });
+  const [saleHistory, setSaleHistory] = useState([]);
   const [actionMsg, setActionMsg] = useState('');
 
-  // Form States
-  const [sellData, setSellData] = useState({ batchNumber: '', quantity: '', customerName: '' });
+  // QR States
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [scannerTarget, setScannerTarget] = useState(null);
+
+  // Cart/Sale States
+  const [customerName, setCustomerName] = useState('');
+  const [cart, setCart] = useState([]);
+  const [selectedBatch, setSelectedBatch] = useState('');
   const [lastInvoice, setLastInvoice] = useState(null);
 
   useEffect(() => {
@@ -59,102 +70,193 @@ export default function PharmacistDashboard() {
   }, []);
 
   const fetchData = useCallback(async () => {
-    if (!contracts.transfer || !account) return;
+    if (!contracts.transfer || !contracts.product || !account) return;
     setLoading(true);
     try {
-      const pending = await contracts.transfer.getMyPendingInbox();
-      setInbox(pending);
+      const bNos = await contracts.product.getAllBatchNumbers();
+      
+      const inRequests = await contracts.transfer.getMyPendingInbox();
+      const inboxWithNames = [];
+      for (let req of inRequests) {
+        try {
+          const b = await contracts.product.getBatch(req.batchNumber);
+          inboxWithNames.push({
+            id: req.id,
+            batchNumber: req.batchNumber,
+            productName: b.productName,
+            sender: req.sender,
+            quantity: req.quantity.toString()
+          });
+        } catch (e) {
+          inboxWithNames.push({ ...req, productName: 'Unknown' });
+        }
+      }
+      setInbox(inboxWithNames);
 
-      const stockIds = await contracts.product.getAvailableStockBatches(account);
       const stockList = [];
-      for (let id of stockIds) {
-        const b = await contracts.product.getBatch(id);
-        const qty = await contracts.product.getStockOf(id, account);
-        const s = await contracts.product.getBatchStatus(id);
-        stockList.push({
-          batchNumber: b.batchNumber,
-          productName: b.productName,
-          quantity: qty.toString(),
-          price: b.costPerUnit.toString(),
-          currency: b.currency,
-          expiry: Number(b.expiryDate),
-          status: Number(s)
-        });
+      for (let bn of bNos) {
+        const qty = await contracts.product.getStockOf(bn, account);
+        if (Number(qty) > 0) {
+          const b = await contracts.product.getBatch(bn);
+          stockList.push({ 
+            batchNumber: bn, 
+            productName: b.productName, 
+            quantity: qty.toString(), 
+            price: b.costPerUnit.toString(),
+            currency: b.currency 
+          });
+        }
       }
       setInventory(stockList);
 
-      const saleIds = await contracts.transfer.getSalesByPharmacist(account);
-      const saleList = [];
-      let totalRev = 0;
-      for (let id of saleIds) {
-        const s = await contracts.transfer.getSale(id);
-        saleList.push({
-          id: s.saleId.toString(),
-          batch: s.batchNumber,
-          quantity: s.quantity.toString(),
-          total: (Number(s.quantity) * Number(s.pricePerUnit)).toString(),
-          date: Number(s.soldAt)
-        });
-        totalRev += (Number(s.quantity) * Number(s.pricePerUnit));
+      // Fetch Sales Record
+      let mySaleIds = [];
+      try {
+        mySaleIds = await contracts.transfer.getSalesByPharmacist(account);
+        console.log("Pharmacist Sale IDs found:", mySaleIds.length);
+      } catch (e) {
+        console.error("Failed to fetch sale IDs:", e);
       }
-      setSales(saleList.reverse());
-      setStats({ items: pending.length, stock: stockList.filter(i => Number(i.quantity) > 0).length, revenue: totalRev });
+      
+      const sales = [];
+      for (let id of mySaleIds) {
+        try {
+          const s = await contracts.transfer.getSale(id);
+          const b = await contracts.product.getBatch(s.batchNumber);
+          sales.push({ 
+            saleId: s.saleId.toString(),
+            productName: b.productName || 'Unknown Product',
+            batchNumber: s.batchNumber,
+            quantity: s.quantity.toString(),
+            pricePerUnit: s.pricePerUnit.toString(),
+            currency: s.currency || 'PKR',
+            soldAt: Number(s.soldAt),
+            customer: s.buyerNote
+          });
+        } catch (e) {
+          console.error("Error fetching individual sale details:", id.toString(), e);
+        }
+      }
+      
+      const sortedSales = sales.sort((a, b) => b.soldAt - a.soldAt);
+      setSaleHistory(sortedSales);
+      setStats({ 
+        stock: stockList.length, 
+        sales: mySaleIds.length, 
+        incoming: inRequests.length 
+      });
 
-    } catch (err) {
-      console.error(err);
-      setActionMsg('❌ Sync Error');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error("Pharmacist Sync Error:", err); }
+    finally { setLoading(false); }
   }, [contracts.transfer, contracts.product, account]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleAccept = async (id) => {
+  const handleAcceptTransfer = async (id) => {
     try {
-      setActionMsg('⏳ Receiving...');
-      const tx = await contracts.transfer.acceptTransfer(id, "Received at Pharmacy");
+      setActionMsg('⏳ Receiving Stock...');
+      const tx = await contracts.transfer.acceptTransfer(id, "Received via QR Validation");
       await tx.wait();
       setActionMsg('✅ Stock Added!');
       fetchData();
     } catch (err) { setActionMsg('❌ Error'); }
   };
 
-  const handleSell = async (e) => {
-    e.preventDefault();
-    try {
-      const batch = inventory.find(i => i.batchNumber === sellData.batchNumber);
-      if (!batch) return;
-      setActionMsg('⏳ Processing Sale...');
-      const qty = window.BigInt(sellData.quantity);
-      const price = window.BigInt(batch.price);
+  const onScanSuccess = (decodedText) => {
+    setIsScannerOpen(false);
+    const scannedBatch = decodedText.trim();
+    
+    if (scannerTarget === 'inbox') {
+      const match = inbox.find(req => req.batchNumber === scannedBatch);
+      if (match) {
+        handleAcceptTransfer(match.id);
+      } else {
+        setActionMsg('⚠️ Scanned Batch not in Deliveries');
+      }
+    } else if (scannerTarget === 'cart') {
+      const match = inventory.find(b => b.batchNumber === scannedBatch);
+      if (match) {
+        setSelectedBatch(scannedBatch);
+        addToCartByValue(scannedBatch);
+      } else {
+        setActionMsg('⚠️ Medicine not on Shelf');
+      }
+    }
+  };
 
-      const tx = await contracts.transfer.sellToBuyer(sellData.batchNumber, qty, price, batch.currency, `Sold to ${sellData.customerName}`);
-      await tx.wait();
+  const addToCartByValue = (bn) => {
+    const item = inventory.find(i => i.batchNumber === bn);
+    if (!item) return;
+    if (cart.find(c => c.batchNumber === bn)) return;
+
+    setCart(prev => [...prev, {
+      batchNumber: item.batchNumber,
+      productName: item.productName,
+      quantity: '1',
+      price: item.price,
+      currency: item.currency
+    }]);
+  };
+
+  const addToCart = () => {
+    if (!selectedBatch) return;
+    addToCartByValue(selectedBatch);
+    setSelectedBatch('');
+  };
+
+  const removeFromCart = (bn) => {
+    setCart(cart.filter(c => c.batchNumber !== bn));
+  };
+
+  const updateCartItem = (bn, field, value) => {
+    setCart(cart.map(c => c.batchNumber === bn ? { ...c, [field]: value } : c));
+  };
+
+  const handleCheckout = async (e) => {
+    if (e) e.preventDefault();
+    if (!customerName || cart.length === 0) {
+      setActionMsg('⚠️ Enter customer name and add medicines');
+      return;
+    }
+
+    try {
+      setActionMsg('⏳ Processing Checkout...');
+      const results = [];
+
+      for (const item of cart) {
+        const nQty = Number(item.quantity);
+        if (isNaN(nQty) || nQty <= 0) continue;
+
+        setActionMsg(`⏳ Registering Sale: ${item.productName}...`);
+        const qtyBI = window.BigInt(Math.floor(nQty));
+        const priceBI = window.BigInt(Math.floor(Number(item.price)));
+
+        const tx = await contracts.transfer.sellToBuyer(item.batchNumber, qtyBI, priceBI, item.currency || 'PKR', `Sold to ${customerName}`);
+        await tx.wait();
+        results.push({ ...item, total: nQty * Number(item.price) });
+      }
+
+      if (results.length === 0) return;
 
       setLastInvoice({
-        customer: sellData.customerName,
-        product: batch.productName,
-        batch: batch.batchNumber,
-        qty: sellData.quantity,
-        price: batch.price,
-        total: Number(sellData.quantity) * Number(batch.price),
-        currency: batch.currency,
+        customer: customerName,
+        items: results,
+        grandTotal: results.reduce((sum, i) => sum + i.total, 0),
+        currency: results[0]?.currency || 'PKR',
         date: new Date().toLocaleString()
       });
 
-      setActionMsg('✅ Sale Completed!');
-      setSellData({ batchNumber: '', quantity: '', customerName: '' });
+      setActionMsg('✅ Checkout Successful!');
+      setCart([]);
+      setCustomerName('');
       fetchData();
       setActiveTab('invoice');
-    } catch (err) { setActionMsg('❌ ' + (err.reason || 'Failed')); }
+    } catch (err) { setActionMsg('❌ Failed'); }
   };
 
   const printInvoice = () => {
     const WindowPrt = window.open('', '', 'left=0,top=0,width=800,height=900');
-    WindowPrt.document.write('<html><head><title>Pharmacy Receipt</title><style>body{font-family:sans-serif;padding:40px;} .header{text-align:center;margin-bottom:40px;color:#10b981;} .total{border-top:2px solid #333;padding-top:10px;margin-top:20px;font-weight:bold;font-size:1.2rem;text-align:right;}</style></head><body>');
+    WindowPrt.document.write('<html><head><title>Pharmacy Receipt</title><style>body{font-family:sans-serif;padding:40px;color:#0f172a;} .header{text-align:center;margin-bottom:30px;color:#10b981;border-bottom:1px solid #f1f5f9;padding-bottom:15px;}</style></head><body>');
     WindowPrt.document.write(invoiceRef.current.innerHTML);
     WindowPrt.document.write('</body></html>');
     WindowPrt.document.close();
@@ -165,174 +267,196 @@ export default function PharmacistDashboard() {
 
   return (
     <div style={styles.dashboardWrapper}>
-      {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
+      <QRScanner 
+        isOpen={isScannerOpen} 
+        onClose={() => setIsScannerOpen(false)} 
+        onScanSuccess={onScanSuccess} 
+        onScanError={() => {}} 
+      />
 
+      {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
-        <div style={styles.sidebarBrand}>
-          <span style={{ color: 'var(--accent-primary)' }}>MediTrace</span>
-          <span style={styles.roleTag}>Pharmacist</span>
-        </div>
+        <div style={styles.sidebarBrand}><span style={{ color: 'var(--accent-primary)' }}>MediTrace</span><span style={styles.roleTag}>Pharmacist</span></div>
         <nav style={styles.nav}>
-          <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="POS Dashboard" />
-          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="Stock Deliveries" count={stats.items} />
-          <NavItem active={activeTab === 'stock'} onClick={() => setActiveTab('stock')} Icon={Icons.Stock} label="Medicine Inventory" />
-          <div style={styles.navDivider}>Point of Sale</div>
-          <NavItem active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} Icon={Icons.Sell} label="New Sale" />
-          <NavItem active={activeTab === 'sales'} onClick={() => setActiveTab('sales')} Icon={Icons.Receipt} label="Transaction History" />
-          <div style={styles.navDivider}>Alerts</div>
-          <NavItem active={activeTab === 'expired'} onClick={() => setActiveTab('expired')} Icon={Icons.Alert} label="Expired Items" />
+          <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} Icon={Icons.Overview} label="Overview" />
+          <NavItem active={activeTab === 'inbox'} onClick={() => setActiveTab('inbox')} Icon={Icons.Inbox} label="New Stock" count={stats.incoming} />
+          <NavItem active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} Icon={Icons.Inventory} label="Pharmacy Shelf" />
+          <NavItem active={activeTab === 'sale'} onClick={() => setActiveTab('sale')} Icon={Icons.Sale} label="Point of Sale" />
+          <NavItem active={activeTab === 'history'} onClick={() => setActiveTab('history')} Icon={Icons.History} label="Sales Record" />
         </nav>
-        <div style={styles.sidebarFooter}>
-           <button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
-        </div>
+        <div style={styles.sidebarFooter}><button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button></div>
       </div>
 
       <div style={{ ...styles.main, marginLeft: isMobile ? '0' : '280px' }}>
         <header style={styles.header}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {isMobile && <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.iconBtn}><Icons.Menu /></button>}
-              <h1 style={styles.headerTitle}>{activeTab.replace('-', ' ').toUpperCase()}</h1>
-           </div>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
-              <div style={styles.userProfile}>
-                 <div style={styles.avatar}>{account?.slice(2,4).toUpperCase()}</div>
-                 {!isMobile && <span style={styles.userName}>Pharmacy Node</span>}
-              </div>
-           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {isMobile && <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.iconBtn}><Icons.Menu /></button>}
+            <h1 style={styles.headerTitle}>{activeTab.replace('-', ' ').toUpperCase()}</h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
+            <div style={styles.userProfile}><div style={{...styles.avatar, background: '#10b981'}}>PH</div>{!isMobile && <span style={styles.userName}>Pharmacist</span>}</div>
+          </div>
         </header>
 
         <div style={styles.content} className="animate-fade-in">
-           {loading ? (
-              <div style={styles.loadingContainer}>⌛ Syncing Records...</div>
-           ) : (
-             <>
-               {activeTab === 'overview' && (
-                 <div style={styles.statsGrid}>
-                   <StatCard title="Total Revenue" value={`${stats.revenue} PKR`} Icon={Icons.Receipt} color="#10b981" />
-                   <StatCard title="Stock Items" value={stats.stock} Icon={Icons.Stock} color="#3b82f6" />
-                   <StatCard title="Pending Inbound" value={stats.items} Icon={Icons.Inbox} color="#f59e0b" />
-                 </div>
-               )}
+          {loading ? ( <div style={styles.loadingContainer}>⌛ Syncing Pharmacy Node...</div> ) : (
+            <>
+              {activeTab === 'overview' && (
+                <div style={styles.statsGrid}>
+                  <StatCard title="Medicines on Shelf" value={stats.stock} Icon={Icons.Inventory} color="#10b981" />
+                  <StatCard title="Total Sales" value={stats.sales} Icon={Icons.Sale} color="#3b82f6" />
+                  <StatCard title="Incoming Stock" value={stats.incoming} Icon={Icons.Inbox} color="#f59e0b" />
+                </div>
+              )}
 
-               {activeTab === 'inbox' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Pending Stock Deliveries</h3>
-                    <div style={styles.tableWrapper}>
-                      <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Supplier</th><th>Quantity</th><th>Date</th><th>Action</th></tr></thead>
-                        <tbody>
-                          {inbox.map(req => (
-                            <tr key={req.id.toString()} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{req.batchNumber}</td>
-                              <td>{req.sender.slice(0,12)}...</td>
-                              <td>{req.quantity.toString()}</td>
-                              <td>{new Date(Number(req.createdAt)*1000).toLocaleDateString()}</td>
-                              <td><button className="btn btn-primary" style={{padding: '0.4rem 1rem', fontSize: '0.8rem'}} onClick={() => handleAccept(req.id)}>Accept Delivery</button></td>
-                            </tr>
-                          ))}
-                          {inbox.length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No pending deliveries.</td></tr>}
-                        </tbody>
-                      </table>
+              {activeTab === 'inbox' && (
+                <div className="glass-panel">
+                   <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                    <h3 style={{margin: 0, fontSize: '1.2rem'}}>Pending Deliveries</h3>
+                    <button onClick={() => { setScannerTarget('inbox'); setIsScannerOpen(true); }} className="btn btn-outline" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: '#10b981', color: '#10b981'}}>
+                      <Icons.Scanner /> Scan to Receive
+                    </button>
+                  </div>
+                  <table style={styles.table}>
+                    <thead><tr style={styles.tableHeader}><th>Medicine</th><th>Batch #</th><th>Supplier</th><th>Qty</th><th>Action</th></tr></thead>
+                    <tbody>
+                      {inbox.map(req => (
+                        <tr key={req.id.toString()} style={styles.tableRow}>
+                          <td style={{fontWeight: 700}}>{req.productName}</td>
+                          <td>{req.batchNumber}</td>
+                          <td style={{fontSize: '0.8rem'}}>{req.sender.slice(0,10)}...</td>
+                          <td>{req.quantity}</td>
+                          <td><button onClick={() => handleAcceptTransfer(req.id)} className="btn btn-primary" style={{padding: '4px 12px', fontSize: '0.8rem'}}>Accept</button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {activeTab === 'inventory' && (
+                <div className="glass-panel">
+                  <h3 style={styles.panelTitle}>Shelf Inventory</h3>
+                  <table style={styles.table}>
+                    <thead><tr style={styles.tableHeader}><th>Batch QR</th><th>Medicine Name</th><th>Batch #</th><th>Price</th><th>Stock</th></tr></thead>
+                    <tbody>
+                      {inventory.map(b => (
+                        <tr key={b.batchNumber} style={styles.tableRow}>
+                          <td style={{padding: '10px'}}><QRCodeDisplay value={b.batchNumber} size={60} showActions={true} /></td>
+                          <td style={{fontWeight: 700}}>{b.productName}</td>
+                          <td>{b.batchNumber}</td>
+                          <td>{b.price} {b.currency}</td>
+                          <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>{b.quantity} units</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {activeTab === 'sale' && (
+                <div className="glass-panel" style={{maxWidth: '900px'}}>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+                    <h3 style={{margin: 0, fontSize: '1.2rem'}}>Multi-Item Point of Sale</h3>
+                    <button onClick={() => { setScannerTarget('cart'); setIsScannerOpen(true); }} className="btn btn-outline" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: '#10b981', color: '#10b981'}}>
+                      <Icons.Scanner /> Scan Medicine
+                    </button>
+                  </div>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem'}}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>1. Customer Identifier</label>
+                      <input type="text" style={styles.input} placeholder="e.g. Ali Haider / Prescription #123" value={customerName} onChange={e => setCustomerName(e.target.value)} required />
                     </div>
-                 </div>
-               )}
-
-               {activeTab === 'stock' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Available Medicine Inventory</h3>
-                    <div style={styles.tableWrapper}>
-                      <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Price</th><th>Quantity</th><th>Status</th></tr></thead>
-                        <tbody>
-                          {inventory.filter(i => Number(i.quantity) > 0 && i.status === 0).map(b => (
-                            <tr key={b.batchNumber} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{b.batchNumber}</td>
-                              <td>{b.productName}</td>
-                              <td>{b.price} {b.currency}</td>
-                              <td style={{fontWeight: 700, color: '#10b981'}}>{b.quantity}</td>
-                              <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>AVAILABLE</span></td>
-                            </tr>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>2. Add to Basket</label>
+                      <div style={{display: 'flex', gap: '0.5rem'}}>
+                        <select style={styles.input} value={selectedBatch} onChange={e => setSelectedBatch(e.target.value)}>
+                          <option value="">-- Choose Medicine --</option>
+                          {inventory.filter(b => Number(b.quantity) > 0 && !cart.find(c => c.batchNumber === b.batchNumber)).map(b => (
+                            <option key={b.batchNumber} value={b.batchNumber}>{b.productName} ({b.batchNumber})</option>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                 </div>
-               )}
-
-               {activeTab === 'sell' && (
-                 <div className="glass-panel" style={{maxWidth: '600px'}}>
-                   <h3 style={styles.panelTitle}>New Customer Sale</h3>
-                   <form onSubmit={handleSell} style={styles.formStack}>
-                      <div style={styles.formGroup}><label style={styles.label}>Select Product</label>
-                        <select style={styles.input} value={sellData.batchNumber} onChange={e => setSellData({...sellData, batchNumber: e.target.value})} required>
-                          <option value="">-- Choose Stock --</option>
-                          {inventory.filter(i => Number(i.quantity) > 0 && i.status === 0).map(i => <option key={i.batchNumber} value={i.batchNumber}>{i.productName} ({i.quantity} units)</option>)}
                         </select>
+                        <button onClick={addToCart} className="btn btn-outline" style={{borderColor: '#10b981', color: '#10b981'}}>Add</button>
                       </div>
-                      <div style={styles.formGroup}><label style={styles.label}>Quantity</label><input type="number" style={styles.input} value={sellData.quantity} onChange={e => setSellData({...sellData, quantity: e.target.value})} required /></div>
-                      <div style={styles.formGroup}><label style={styles.label}>Customer Name</label><input type="text" style={styles.input} placeholder="Full Name" value={sellData.customerName} onChange={e => setSellData({...sellData, customerName: e.target.value})} required /></div>
-                      <button type="submit" className="btn btn-primary" style={{width: '100%', marginTop: '1rem'}}>Process & Print Receipt</button>
-                   </form>
-                 </div>
-               )}
-
-               {activeTab === 'invoice' && lastInvoice && (
-                 <div className="glass-panel">
-                    <div ref={invoiceRef} style={{padding: '30px', background: 'white', border: '1px solid #e2e8f0'}}>
-                       <div style={{textAlign: 'center', marginBottom: '30px'}}><h2 style={{color: '#10b981', margin: 0}}>PHARMACY SALE RECEIPT</h2><p style={{fontSize: '0.8rem', color: '#64748b'}}>Blockchain Verified Transaction</p></div>
-                       <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '30px'}}>
-                          <div><strong>Customer:</strong> {lastInvoice.customer}<br/><strong>Date:</strong> {lastInvoice.date}</div>
-                          <div style={{textAlign: 'right'}}><strong>Receipt #:</strong> {Math.floor(Math.random()*100000)}<br/><strong>Batch:</strong> {lastInvoice.batch}</div>
-                       </div>
-                       <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                          <thead><tr style={{borderBottom: '2px solid #0f172a', textAlign: 'left'}}><th style={{padding: '8px'}}>Medicine Name</th><th>Qty</th><th>Unit Price</th><th style={{textAlign: 'right'}}>Total</th></tr></thead>
-                          <tbody><tr><td style={{padding: '12px 8px'}}>{lastInvoice.product}</td><td>{lastInvoice.qty}</td><td>{lastInvoice.price}</td><td style={{textAlign: 'right'}}>{lastInvoice.total} {lastInvoice.currency}</td></tr></tbody>
-                       </table>
-                       <div className="total">Grand Total: {lastInvoice.total} {lastInvoice.currency}</div>
                     </div>
-                    <button onClick={printInvoice} className="btn btn-primary" style={{marginTop: '2rem'}}>Print Receipt</button>
-                 </div>
-               )}
+                  </div>
 
-               {activeTab === 'sales' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Past Sales Records</h3>
-                    <div style={styles.tableWrapper}>
+                  {cart.length > 0 && (
+                    <div style={{marginBottom: '2rem'}}>
+                      <h4 style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem'}}>Basket Summary</h4>
                       <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>ID</th><th>Batch No</th><th>Quantity</th><th>Total Amount</th><th>Transaction Date</th></tr></thead>
+                        <thead><tr style={styles.tableHeader}><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
                         <tbody>
-                          {sales.map(s => (
-                            <tr key={s.id} style={styles.tableRow}>
-                              <td>#{s.id}</td><td>{s.batch}</td><td>{s.quantity}</td><td style={{fontWeight: 700}}>{s.total} PKR</td><td>{new Date(s.date*1000).toLocaleString()}</td>
+                          {cart.map(item => (
+                            <tr key={item.batchNumber} style={styles.tableRow}>
+                              <td><div style={{fontWeight: 700}}>{item.productName}</div><div style={{fontSize: '0.7rem'}}>{item.batchNumber}</div></td>
+                              <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '80px'}} value={item.quantity} onChange={e => updateCartItem(item.batchNumber, 'quantity', e.target.value)} /></td>
+                              <td>{item.price} {item.currency}</td>
+                              <td>{Number(item.quantity || 0) * Number(item.price)} {item.currency}</td>
+                              <td><button onClick={() => removeFromCart(item.batchNumber)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Icons.Trash /></button></td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                      <div style={{textAlign: 'right', marginTop: '1.5rem', fontSize: '1.1rem', fontWeight: 800}}>Grand Total: {cart.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.price)), 0)} {cart[0]?.currency}</div>
+                      <button onClick={handleCheckout} className="btn btn-primary" style={{marginTop: '2rem', width: '100%'}}>Finalize Sale & Generate Receipt</button>
                     </div>
-                 </div>
-               )}
+                  )}
+                </div>
+              )}
 
-               {activeTab === 'expired' && (
-                 <div className="glass-panel">
-                    <h3 style={{...styles.panelTitle, color: '#ef4444'}}>Flagged & Expired Inventory</h3>
-                    <p style={{color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem'}}>Items listed here must be quarantined and not sold to patients.</p>
-                    <div style={styles.tableWrapper}>
-                      <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Units</th><th>Expiry Date</th></tr></thead>
+              {activeTab === 'invoice' && lastInvoice && (
+                <div className="glass-panel">
+                  <div ref={invoiceRef} style={{padding: '40px', background: 'white', border: '1px solid #e2e8f0'}}>
+                     <div style={{textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #10b981', paddingBottom: '15px'}}>
+                        <h2 style={{margin: 0, color: '#10b981'}}>PHARMACY SALES RECEIPT</h2>
+                        <p style={{fontSize: '0.8rem', color: '#64748b'}}>MediTrace Blockchain Verified Authenticity</p>
+                     </div>
+                     <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '30px', fontSize: '0.9rem'}}>
+                        <div><strong>CUSTOMER:</strong><br/>{lastInvoice.customer}</div>
+                        <div style={{textAlign: 'right'}}><strong>DATE:</strong><br/>{lastInvoice.date}<br/><strong>RECEIPT #:</strong> RC-{Math.floor(Math.random()*100000)}</div>
+                     </div>
+                     <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '20px'}}>
+                        <thead><tr style={{borderBottom: '2px solid #0f172a', textAlign: 'left', fontSize: '0.8rem'}}><th style={{padding: '10px'}}>Item</th><th>Qty</th><th>Price</th><th style={{textAlign: 'right'}}>Subtotal</th></tr></thead>
                         <tbody>
-                          {inventory.filter(i => i.status === 1 || i.expiry * 1000 < Date.now()).map(b => (
-                            <tr key={b.batchNumber} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{b.batchNumber}</td><td>{b.productName}</td><td>{b.quantity}</td><td style={{color: '#ef4444'}}>{new Date(b.expiry*1000).toLocaleDateString()}</td>
-                            </tr>
+                          {lastInvoice.items.map((item, idx) => (
+                            <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}><td style={{padding: '10px'}}>{item.productName}<br/><span style={{fontSize: '0.6rem'}}>Batch: {item.batchNumber}</span></td><td>{item.quantity}</td><td>{item.price}</td><td style={{textAlign: 'right'}}>{item.total} {item.currency}</td></tr>
                           ))}
                         </tbody>
-                      </table>
-                    </div>
-                 </div>
-               )}
-             </>
-           )}
+                     </table>
+                     <div style={{textAlign: 'right', fontSize: '1.3rem', fontWeight: 800}}>TOTAL: {lastInvoice.grandTotal} {lastInvoice.currency}</div>
+                     <div style={{marginTop: '50px', borderTop: '1px solid #e2e8f0', paddingTop: '15px', fontSize: '0.7rem', color: '#94a3b8', textAlign: 'center'}}>
+                        Thank you for choosing a MediTrace verified pharmacy. Scan the batch QR code on your medicine to verify its entire journey from manufacturer to your hand.
+                     </div>
+                  </div>
+                  <div style={{display: 'flex', gap: '1rem', marginTop: '2rem'}}>
+                    <button onClick={printInvoice} className="btn btn-primary">Print Receipt</button>
+                    <button onClick={() => setActiveTab('sale')} className="btn btn-outline">New Sale</button>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'history' && (
+                <div className="glass-panel">
+                  <h3 style={styles.panelTitle}>Sales Ledger</h3>
+                  <table style={styles.table}>
+                    <thead><tr style={styles.tableHeader}><th>Date</th><th>Medicine</th><th>Qty</th><th>Total</th></tr></thead>
+                    <tbody>
+                      {saleHistory.map(s => (
+                        <tr key={s.saleId.toString()} style={styles.tableRow}>
+                          <td>{new Date(Number(s.soldAt) * 1000).toLocaleDateString()}</td>
+                          <td>{s.productName}</td>
+                          <td>{s.quantity.toString()}</td>
+                          <td style={{fontWeight: 700}}>{(Number(s.quantity) * Number(s.pricePerUnit))} {s.currency}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -344,48 +468,42 @@ const NavItem = ({ active, onClick, Icon, label, count }) => (
 );
 
 const StatCard = ({ title, value, Icon, color }) => (
-  <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}>
-    <div style={{ ...styles.statIconContainer, color: color, background: `${color}10` }}><Icon /></div>
-    <div><div style={styles.statTitle}>{title}</div><div style={styles.statValue}>{value}</div></div>
-  </div>
+  <div style={{ ...styles.statCard, borderTop: `4px solid ${color}` }}><div style={{ ...styles.statIconContainer, color: color, background: `${color}10` }}><Icon /></div><div><div style={styles.statTitle}>{title}</div><div style={styles.statValue}>{value}</div></div></div>
 );
 
 const styles = {
   dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f8fafc', position: 'fixed', inset: 0, zIndex: 10 },
-  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#0f172a', display: 'flex', flexDirection: 'column', zIndex: 100, transition: 'left 0.3s ease' },
+  sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#0f172a', display: 'flex', flexDirection: 'column', zIndex: 100 },
   sidebarOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 90 },
-  sidebarBrand: { padding: '2.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '4px' },
-  roleTag: { color: '#94a3b8', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' },
+  sidebarBrand: { padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', color: 'white', fontWeight: 800, fontSize: '1.4rem' },
+  roleTag: { color: '#94a3b8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' },
   nav: { flex: 1, padding: '0 1rem' },
-  navItem: { display: 'flex', alignItems: 'center', padding: '0.875rem 1.25rem', borderRadius: '10px', cursor: 'pointer', color: '#94a3b8', transition: 'all 0.2s ease', marginBottom: '4px' },
+  navItem: { display: 'flex', alignItems: 'center', padding: '0.8rem 1rem', borderRadius: '8px', cursor: 'pointer', color: '#94a3b8', marginBottom: '4px' },
   navItemActive: { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' },
   navCount: { background: '#ef4444', color: 'white', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '99px', fontWeight: 700 },
-  navDivider: { padding: '1.5rem 1.25rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' },
   sidebarFooter: { padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' },
-  logoutBtn: { width: '100%', padding: '0.75rem', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontSize: '0.9rem' },
-  main: { flex: 1, height: '100vh', overflowY: 'auto' },
-  header: { height: '80px', background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
-  headerTitle: { fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 },
-  iconBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' },
-  toast: { background: '#f0fdf4', color: '#059669', padding: '0.5rem 1.25rem', borderRadius: '99px', fontSize: '0.85rem', fontWeight: 600, border: '1px solid #d1fae5' },
-  userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
-  avatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#10b981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
-  userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.95rem' },
-  content: { padding: '2.5rem' },
+  logoutBtn: { width: '100%', padding: '0.6rem', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  main: { flex: 1, height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' },
+  header: { height: '70px', background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
+  headerTitle: { fontSize: '1rem', fontWeight: 800, color: '#0f172a' },
+  iconBtn: { background: 'none', border: 'none', cursor: 'pointer' },
+  toast: { background: '#f0fdf4', color: '#059669', padding: '4px 12px', borderRadius: '99px', fontSize: '0.8rem', fontWeight: 600 },
+  userProfile: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
+  userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.9rem' },
+  content: { padding: '2rem', flex: 1 },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' },
-  statCard: { background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1.25rem', alignItems: 'center' },
-  statIconContainer: { width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  statTitle: { color: '#64748b', fontSize: '0.85rem', fontWeight: 500 },
-  statValue: { fontSize: '1.75rem', fontWeight: 800, color: '#0f172a' },
-  panelTitle: { fontSize: '1.25rem', color: '#0f172a', marginBottom: '2rem', marginTop: 0 },
-  tableWrapper: { overflowX: 'auto' },
+  statCard: { background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1rem', alignItems: 'center' },
+  statIconContainer: { width: '48px', height: '48px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  statTitle: { color: '#64748b', fontSize: '0.8rem' },
+  statValue: { fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' },
+  panelTitle: { fontSize: '1.2rem', color: '#0f172a', marginBottom: '1.5rem', fontWeight: 700 },
   table: { width: '100%', borderCollapse: 'collapse' },
-  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  tableHeader: { background: '#f8fafc', textAlign: 'left', color: '#64748b', fontSize: '0.7rem', textTransform: 'uppercase', padding: '12px' },
   tableRow: { borderBottom: '1px solid #f1f5f9' },
   badge: { padding: '4px 12px', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700 },
-  formStack: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
   formGroup: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  label: { fontSize: '0.85rem', fontWeight: 700, color: '#475569' },
-  input: { padding: '0.875rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#0f172a', fontSize: '0.95rem' },
+  label: { fontSize: '0.8rem', fontWeight: 700, color: '#475569' },
+  input: { padding: '0.7rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f8fafc' },
   loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' }
 };

@@ -1,26 +1,27 @@
 import React from 'react';
 import softwareImg from '../assets/software_mockup.png';
 import founderImg from '../assets/founder.png';
+import founderImg2 from '../assets/founder2.png';
 import Footer from '../components/Footer';
 
 export default function AboutUs() {
   return (
     <div className="page-content animate-fade-in">
       <div className="container" style={{ maxWidth: '1100px', paddingBottom: '8rem' }}>
-        
+
         {/* Software Description Section */}
         <section style={styles.section} className="animate-slide-up">
           <div style={styles.softwareGrid}>
             <div style={styles.textSide}>
               <h1 style={styles.mainTitle}>About the <span className="gradient-text">Software</span></h1>
               <p style={styles.description}>
-                <strong>MediTrace</strong> is a state-of-the-art pharmaceutical supply chain management system built on Ethereum blockchain technology. 
-                Our platform addresses the critical global challenge of counterfeit medicines by providing an immutable, transparent, 
+                <strong>MediTrace</strong> is a state-of-the-art pharmaceutical supply chain management system built on Ethereum blockchain technology.
+                Our platform addresses the critical global challenge of counterfeit medicines by providing an immutable, transparent,
                 and real-time record of every pharmaceutical batch produced.
               </p>
               <p style={styles.description}>
-                By leveraging smart contracts, MediTrace ensures that every handoff—from the manufacturer to the distributor, 
-                and finally to the pharmacist—is digitally signed and verified. This "Chain of Custody" creates a digital fortress 
+                By leveraging smart contracts, MediTrace ensures that every handoff—from the manufacturer to the distributor,
+                and finally to the pharmacist—is digitally signed and verified. This "Chain of Custody" creates a digital fortress
                 around the medicine supply.
               </p>
             </div>
@@ -35,21 +36,21 @@ export default function AboutUs() {
         <section style={styles.gridSection}>
           <div style={styles.visionCard} className="animate-slide-up delay-1">
             <div style={styles.iconCircle}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>
             </div>
             <h2 style={styles.cardTitle}>Our Mission</h2>
             <p style={styles.cardText}>
-              To eliminate the global counterfeit medicine crisis by providing a secure, decentralized infrastructure 
+              To eliminate the global counterfeit medicine crisis by providing a secure, decentralized infrastructure
               that empowers manufacturers and protects patients.
             </p>
           </div>
           <div style={styles.visionCard} className="animate-slide-up delay-2">
             <div style={styles.iconCircle}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
             </div>
             <h2 style={styles.cardTitle}>Our Vision</h2>
             <p style={styles.cardText}>
-              To become the global standard for pharmaceutical integrity, where "Verified by MediTrace" becomes 
+              To become the global standard for pharmaceutical integrity, where "Verified by MediTrace" becomes
               the universal seal of trust for every patient worldwide.
             </p>
           </div>
@@ -59,25 +60,25 @@ export default function AboutUs() {
         <section style={styles.section} className="animate-slide-up delay-3">
           <h2 style={styles.sectionTitle}>How to <span className="gradient-text">Use the Platform</span></h2>
           <div style={styles.stepsGrid}>
-            <StepItem 
-              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>} 
-              title="Registration" 
-              desc="Enterprises register their wallet address and company details for Admin verification." 
+            <StepItem
+              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>}
+              title="Registration"
+              desc="Enterprises register their wallet address and company details for Admin verification."
             />
-            <StepItem 
-              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>} 
-              title="Production" 
-              desc="Manufacturers register new batches, generating a unique digital identity for each." 
+            <StepItem
+              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>}
+              title="Production"
+              desc="Manufacturers register new batches, generating a unique digital identity for each."
             />
-            <StepItem 
-              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13"/><polyline points="16 8 20 8 23 11 23 16 16 16"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>} 
-              title="Transfer" 
-              desc="As products move through the supply chain, each entity confirms receipt on the ledger." 
+            <StepItem
+              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13" /><polyline points="16 8 20 8 23 11 23 16 16 16" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>}
+              title="Transfer"
+              desc="As products move through the supply chain, each entity confirms receipt on the ledger."
             />
-            <StepItem 
-              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 11 13 15 9"/></svg>} 
-              title="Verification" 
-              desc="Patients scan the Batch ID to view the full journey and authenticity status instantly." 
+            <StepItem
+              icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><polyline points="9 11 11 13 15 9" /></svg>}
+              title="Verification"
+              desc="Patients scan the Batch ID to view the full journey and authenticity status instantly."
             />
           </div>
         </section>
@@ -88,9 +89,9 @@ export default function AboutUs() {
           <div style={styles.foundersGrid}>
             {/* Founder 1 */}
             <div className="glass-panel" style={styles.founderCard}>
-              <img src={founderImg} alt="Ali Haider" style={styles.founderImg} />
+              <img src={founderImg} alt="Ali Haider Aziz" style={styles.founderImg} />
               <div style={styles.founderInfo}>
-                <h3 style={styles.founderName}>Ali Haider</h3>
+                <h3 style={styles.founderName}>Ali Haider Aziz</h3>
                 <p style={styles.founderTitle}>Lead Blockchain Architect</p>
                 <div style={styles.divider}></div>
                 <p style={styles.founderBio}>
@@ -105,9 +106,9 @@ export default function AboutUs() {
 
             {/* Founder 2 */}
             <div className="glass-panel" style={styles.founderCard}>
-              <img src={founderImg} alt="Ayesha Khan" style={styles.founderImg} />
+              <img src={founderImg2} alt="Ali Raza" style={styles.founderImg} />
               <div style={styles.founderInfo}>
-                <h3 style={styles.founderName}>Ayesha Khan</h3>
+                <h3 style={styles.founderName}>Ali Raza</h3>
                 <p style={styles.founderTitle}>Chief Operations Officer</p>
                 <div style={styles.divider}></div>
                 <p style={styles.founderBio}>

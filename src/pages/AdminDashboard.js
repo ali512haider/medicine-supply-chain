@@ -10,11 +10,14 @@ const Icons = {
   Users: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
   ),
+  Medicine: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
+  ),
+  Search: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+  ),
   Shield: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-  ),
-  Medicine: () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 21H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path><path d="M10 5V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2"></path><path d="M4 11h16"></path><path d="M8 15h.01"></path><path d="M16 15h.01"></path></svg>
   ),
   Activity: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
@@ -34,19 +37,21 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
-  // Modal & Input State
+  // Modal & Logic State
   const [modal, setModal] = useState({ isOpen: false, title: '', type: '', data: null });
   const [licenseInput, setLicenseInput] = useState('');
 
   // Data State
-  const [allUsers, setAllUsers] = useState([]);
-  const [allBatches, setAllBatches] = useState([]);
-  const [stats, setStats] = useState({ 
-    total: 0, pending: 0, active: 0, 
-    manufacturers: 0, distributors: 0, suppliers: 0, pharmacists: 0,
-    batches: 0
-  });
+  const [stats, setStats] = useState({ manufacturers: 0, distributors: 0, suppliers: 0, pharmacists: 0, batches: 0, pending: 0, active: 0 });
+  const [entities, setEntities] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [actionMsg, setActionMsg] = useState('');
+
+  // Trace State
+  const [traceBN, setTraceBN] = useState('');
+  const [traceData, setTraceData] = useState(null);
+  const [traceHistory, setTraceHistory] = useState([]);
+  const [traceError, setTraceError] = useState('');
 
   useEffect(() => {
     const handleResize = () => {
@@ -63,53 +68,52 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const allAddrs = await contracts.registry.getAllRegistered();
-      const list = [];
-      let pCount = 0, aCount = 0, mCount = 0, dCount = 0, sCount = 0, phCount = 0;
+      const entityList = [];
+      let m=0, d=0, s=0, p=0, pending=0, active=0;
 
       for (let addr of allAddrs) {
         const entity = await contracts.registry.getEntity(addr);
-        const data = {
-          address: addr,
+        const role = Number(entity.role);
+        const status = Number(entity.status);
+
+        entityList.push({ 
+          address: addr, 
           name: entity.name,
           email: entity.email,
           location: entity.location,
-          role: Number(entity.role),
-          status: Number(entity.status)
-        };
-        list.push(data);
-        if (data.status === 1) pCount++;
-        if (data.status === 2) {
-          aCount++;
-          if (data.role === 2) mCount++;
-          if (data.role === 3) dCount++;
-          if (data.role === 4) sCount++;
-          if (data.role === 5) phCount++;
+          licenseNumber: entity.licenseNumber,
+          role, 
+          status 
+        });
+
+        if (status === 1) pending++;
+        if (status === 2) {
+          active++;
+          if (role === 2) m++;
+          if (role === 3) d++;
+          if (role === 4) s++;
+          if (role === 5) p++;
         }
       }
-      setAllUsers(list);
+      setEntities(entityList);
 
-      const allBatchNos = await contracts.product.getAllBatchNumbers();
-      const batchesList = [];
-      for (let bn of allBatchNos) {
+      const bNos = await contracts.product.getAllBatchNumbers();
+      setStats({ manufacturers: m, distributors: d, suppliers: s, pharmacists: p, batches: bNos.length, pending, active });
+
+      const bList = [];
+      for (let bn of bNos) {
         const b = await contracts.product.getBatch(bn);
-        const s = await contracts.product.getBatchStatus(bn);
-        batchesList.push({
-          batchNumber: bn,
+        bList.push({ 
+          batchNumber: bn, 
           productName: b.productName,
           manufacturer: b.manufacturer,
-          status: Number(s)
+          expiryDate: Number(b.expiryDate)
         });
       }
-      setAllBatches(batchesList.reverse());
-
-      setStats({ 
-        total: list.length, pending: pCount, active: aCount,
-        manufacturers: mCount, distributors: dCount, suppliers: sCount, pharmacists: phCount,
-        batches: allBatchNos.length
-      });
+      setBatches(bList.reverse());
 
     } catch (err) {
-      console.error("Dashboard Sync Error:", err);
+      console.error("Admin Sync Error:", err);
       setActionMsg('❌ Sync Error');
     } finally {
       setLoading(false);
@@ -120,20 +124,48 @@ export default function AdminDashboard() {
     fetchData();
   }, [fetchData]);
 
-  const openApproveModal = (userAddr) => {
-    setLicenseInput('');
-    setModal({ isOpen: true, title: 'Approve Entity', type: 'approve', data: userAddr });
+  const handleTrace = async (e, bn) => {
+    if (e) e.preventDefault();
+    const target = bn || traceBN;
+    if (!target) return;
+    try {
+      setActionMsg('🔍 Tracing Journey...');
+      setTraceError('');
+      setTraceData(null);
+      setTraceHistory([]);
+      
+      const data = await contracts.trace.verifyProduct(target);
+      if (!data.batchFound) {
+        setTraceError('❌ Batch Number not found in ledger.');
+        return;
+      }
+      setTraceData(data);
+      const history = await contracts.trace.getFullHistory(target);
+      setTraceHistory(history);
+      setActiveTab('trace');
+      setTraceBN(target);
+    } catch (err) {
+      console.error(err);
+      setTraceError('❌ Blockchain lookup failed.');
+    } finally {
+      setActionMsg('');
+    }
   };
 
-  const openRejectModal = (userAddr) => {
-    setModal({ isOpen: true, title: 'Confirm Rejection', type: 'reject', data: userAddr });
+  const openApproveModal = (entity) => {
+    setLicenseInput('');
+    setModal({ isOpen: true, title: `Approve ${entity.name}`, type: 'approve', data: entity });
+  };
+
+  const openRejectModal = (entity) => {
+    setModal({ isOpen: true, title: `Reject ${entity.name}`, type: 'reject', data: entity });
   };
 
   const handleApprove = async () => {
     if (!licenseInput) return;
-    const userAddr = modal.data;
     try {
-      setActionMsg('⏳ Approving...');
+      const userAddr = modal.data.address;
+      setActionMsg('⏳ Committing to Ledger...');
       setModal({ ...modal, isOpen: false });
       const tx = await contracts.registry.approveEntity(userAddr, licenseInput);
       await tx.wait();
@@ -143,9 +175,9 @@ export default function AdminDashboard() {
   };
 
   const handleReject = async () => {
-    const userAddr = modal.data;
     try {
-      setActionMsg('⏳ Rejecting...');
+      const userAddr = modal.data.address;
+      setActionMsg('⏳ Committing to Ledger...');
       setModal({ ...modal, isOpen: false });
       const tx = await contracts.registry.rejectEntity(userAddr);
       await tx.wait();
@@ -207,8 +239,7 @@ export default function AdminDashboard() {
           <NavItem active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} Icon={Icons.Shield} label="Approval Queue" count={stats.pending} />
           <NavItem active={activeTab === 'users'} onClick={() => setActiveTab('users')} Icon={Icons.Users} label="Entity Management" />
           <NavItem active={activeTab === 'batches'} onClick={() => setActiveTab('batches')} Icon={Icons.Medicine} label="Medicine Tracking" />
-          <div style={styles.navDivider}>Global Records</div>
-          <NavItem active={activeTab === 'audit'} onClick={() => setActiveTab('audit')} Icon={Icons.Activity} label="Transaction Audit" />
+          <NavItem active={activeTab === 'trace'} onClick={() => setActiveTab('trace')} Icon={Icons.Search} label="Trace Journey" />
         </nav>
         <div style={styles.sidebarFooter}>
            <button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
@@ -253,29 +284,25 @@ export default function AdminDashboard() {
 
                {activeTab === 'pending' && (
                  <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Pending Approvals</h3>
+                    <h3 style={styles.panelTitle}>Pending Approval Requests</h3>
                     <div style={styles.tableWrapper}>
                       <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Organization</th><th>Contact/Location</th><th>Role</th><th>Wallet</th><th>Action</th></tr></thead>
+                        <thead><tr style={styles.tableHeader}><th>Entity</th><th>Role</th><th>Email</th><th>Location</th><th>Action</th></tr></thead>
                         <tbody>
-                          {allUsers.filter(u => u.status === 1).map(user => (
-                            <tr key={user.address} style={styles.tableRow}>
-                              <td style={{padding: '1rem'}}>
-                                <div style={{fontWeight: 700}}>{user.name}</div>
-                                <div style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>{user.email}</div>
-                              </td>
+                          {entities.filter(e => e.status === 1).map(e => (
+                            <tr key={e.address} style={styles.tableRow}>
+                              <td><div style={{fontWeight: 700}}>{e.name}</div><div style={{fontSize: '0.7rem', color: '#94a3b8'}}>{e.address}</div></td>
+                              <td><span style={styles.roleBadge}>{roleNames[e.role]}</span></td>
+                              <td>{e.email}</td>
+                              <td>{e.location}</td>
                               <td>
-                                <div style={{fontSize: '0.85rem'}}>{user.location}</div>
-                              </td>
-                              <td><span style={styles.roleBadge}>{roleNames[user.role]}</span></td>
-                              <td style={{fontFamily: 'monospace', fontSize: '0.8rem'}}>{user.address.slice(0,10)}...</td>
-                              <td style={{display: 'flex', gap: '0.5rem', padding: '1rem'}}>
-                                <button className="btn btn-primary" style={{padding: '0.4rem 0.75rem', fontSize: '0.75rem'}} onClick={() => openApproveModal(user.address)}>Approve</button>
-                                <button className="btn btn-outline" style={{padding: '0.4rem 0.75rem', fontSize: '0.75rem', color: '#ef4444', borderColor: '#fee2e2'}} onClick={() => openRejectModal(user.address)}>Reject</button>
+                                <div style={{display: 'flex', gap: '0.5rem'}}>
+                                  <button onClick={() => openApproveModal(e)} className="btn btn-primary" style={{padding: '4px 12px', fontSize: '0.8rem'}}>Approve</button>
+                                  <button onClick={() => openRejectModal(e)} className="btn btn-danger" style={{padding: '4px 12px', fontSize: '0.8rem', background: '#fee2e2', color: '#ef4444', border: 'none'}}>Reject</button>
+                                </div>
                               </td>
                             </tr>
                           ))}
-                          {allUsers.filter(u => u.status === 1).length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No pending users.</td></tr>}
                         </tbody>
                       </table>
                     </div>
@@ -283,29 +310,20 @@ export default function AdminDashboard() {
                )}
 
                {activeTab === 'users' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Network User Directory</h3>
+                  <div className="glass-panel">
+                    <h3 style={styles.panelTitle}>Registered Network Entities</h3>
                     <div style={styles.tableWrapper}>
                       <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Organization</th><th>Details</th><th>Role</th><th>Status</th></tr></thead>
+                        <thead><tr style={styles.tableHeader}><th>Name</th><th>Role</th><th>License</th><th>Status</th></tr></thead>
                         <tbody>
-                          {allUsers.map(user => (
-                            <tr key={user.address} style={styles.tableRow}>
-                              <td style={{padding: '1rem'}}>
-                                <div style={{fontWeight: 700}}>{user.name}</div>
-                                <div style={{fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-muted)'}}>{user.address}</div>
-                              </td>
+                          {entities.filter(e => e.status !== 1).map(e => (
+                            <tr key={e.address} style={styles.tableRow}>
+                              <td><div style={{fontWeight: 700}}>{e.name}</div><div style={{fontSize: '0.7rem', color: '#94a3b8'}}>{e.address}</div></td>
+                              <td>{roleNames[e.role]}</td>
+                              <td>{e.licenseNumber || 'N/A'}</td>
                               <td>
-                                <div style={{fontSize: '0.85rem'}}>{user.email}</div>
-                                <div style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>{user.location}</div>
-                              </td>
-                              <td>{roleNames[user.role]}</td>
-                              <td>
-                                <span style={{...styles.badge, 
-                                  background: user.status === 2 ? '#f0fdf4' : (user.status === 1 ? '#fff7ed' : '#fee2e2'),
-                                  color: user.status === 2 ? '#10b981' : (user.status === 1 ? '#f59e0b' : '#ef4444')
-                                }}>
-                                  {user.status === 2 ? 'ACTIVE' : (user.status === 1 ? 'PENDING' : 'REJECTED')}
+                                <span style={{...styles.badge, background: e.status === 2 ? '#f0fdf4' : '#fee2e2', color: e.status === 2 ? '#10b981' : '#ef4444'}}>
+                                  {e.status === 2 ? 'APPROVED' : 'REJECTED'}
                                 </span>
                               </td>
                             </tr>
@@ -313,45 +331,86 @@ export default function AdminDashboard() {
                         </tbody>
                       </table>
                     </div>
-                 </div>
+                  </div>
                )}
 
                {activeTab === 'batches' && (
-                 <div className="glass-panel">
-                    <h3 style={styles.panelTitle}>Global Medicine Batches</h3>
+                  <div className="glass-panel">
+                    <h3 style={styles.panelTitle}>Global Product Ledger</h3>
                     <div style={styles.tableWrapper}>
                       <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product Name</th><th>Manufacturer</th><th>Status</th></tr></thead>
+                        <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Manufacturer</th><th>Expiry</th><th>Action</th></tr></thead>
                         <tbody>
-                          {allBatches.map((b, idx) => (
-                            <tr key={idx} style={styles.tableRow}>
+                          {batches.map(b => (
+                            <tr key={b.batchNumber} style={styles.tableRow}>
                               <td style={{fontWeight: 700}}>{b.batchNumber}</td>
                               <td>{b.productName}</td>
-                              <td>{b.manufacturer.slice(0,12)}...</td>
+                              <td style={{fontSize: '0.8rem'}}>{b.manufacturer}</td>
+                              <td>{new Date(Number(b.expiryDate)*1000).toLocaleDateString()}</td>
                               <td>
-                                <span style={{...styles.badge, background: b.status === 2 ? '#fee2e2' : (b.status === 1 ? '#fff7ed' : '#f0fdf4'), color: b.status === 2 ? '#ef4444' : (b.status === 1 ? '#f59e0b' : '#10b981')}}>
-                                  {b.status === 2 ? 'RECALLED' : (b.status === 1 ? 'EXPIRED' : 'ACTIVE')}
-                                </span>
+                                <button onClick={() => handleTrace(null, b.batchNumber)} className="btn btn-primary" style={{padding: '4px 12px', fontSize: '0.8rem'}}>Trace</button>
                               </td>
                             </tr>
                           ))}
-                          {allBatches.length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No batches found.</td></tr>}
                         </tbody>
                       </table>
                     </div>
-                 </div>
+                  </div>
                )}
 
-               {activeTab === 'audit' && (
-                 <div className="glass-panel" style={{textAlign: 'center', padding: '4rem'}}>
-                    <div style={{fontSize: '3rem', marginBottom: '1rem'}}>📋</div>
-                    <h3>Global Transaction Audit</h3>
-                    <p style={{color: '#64748b'}}>Centralized tracking of all blockchain handoffs.</p>
+               {activeTab === 'trace' && (
+                 <div className="glass-panel">
+                    <h3 style={styles.panelTitle}>Blockchain Journey Tracer</h3>
+                    <form onSubmit={handleTrace} style={{ display: 'flex', gap: '1rem', marginBottom: '2.5rem' }}>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="Enter Batch Number to Trace..." 
+                        value={traceBN}
+                        onChange={(e) => setTraceBN(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button type="submit" className="btn btn-primary">Trace Batch</button>
+                    </form>
+
+                    {traceError && <div style={{ color: '#ef4444', background: '#fef2f2', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>{traceError}</div>}
+
+                    {traceData && (
+                      <div style={styles.traceGrid}>
+                        <div style={styles.traceInfoCard}>
+                          <h4 style={styles.cardSubTitle}>Batch Specifications</h4>
+                          <TraceItem label="Product" value={traceData.productName} />
+                          <TraceItem label="Manufacturer" value={traceData.manufacturer} />
+                          <TraceItem label="License" value={traceData.manufacturerLicense} />
+                          <TraceItem label="Mfg Date" value={new Date(Number(traceData.mfgDate)*1000).toLocaleDateString()} />
+                          <TraceItem label="Expiry Date" value={new Date(Number(traceData.expiryDate)*1000).toLocaleDateString()} />
+                          <TraceItem label="Status" value={traceData.isActive ? 'ACTIVE' : 'INACTIVE'} color={traceData.isActive ? '#10b981' : '#ef4444'} />
+                        </div>
+                        <div style={styles.traceTimeline}>
+                          <h4 style={styles.cardSubTitle}>Chain of Custody</h4>
+                          {traceHistory.map((evt, idx) => (
+                            <div key={idx} style={styles.tlItem}>
+                              <div style={styles.tlMarker} />
+                              <div style={styles.tlContent}>
+                                <div style={styles.tlTime}>{new Date(Number(evt.timestamp)*1000).toLocaleString()}</div>
+                                <div style={styles.tlAction}>{evt.action}</div>
+                                <div style={styles.tlActor}>Actor: {evt.actor.slice(0,12)}...</div>
+                                {evt.note && <div style={styles.tlNote}>{evt.note}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                  </div>
                )}
              </>
            )}
         </div>
+        <footer style={styles.dashboardFooter}>
+          <p style={styles.footerText}>© 2026 MediTrace Blockchain. Developed at UET Taxila.</p>
+          <p style={styles.footerStatus}>Network: <span style={{color: '#10b981', fontWeight: 700}}>Operational</span></p>
+        </footer>
       </div>
     </div>
   );
@@ -368,6 +427,13 @@ const StatCard = ({ title, value, Icon, color }) => (
   </div>
 );
 
+const TraceItem = ({ label, value, color }) => (
+  <div style={{ marginBottom: '1rem' }}>
+    <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{label}</div>
+    <div style={{ fontSize: '1rem', fontWeight: 600, color: color || '#0f172a' }}>{value}</div>
+  </div>
+);
+
 const styles = {
   dashboardWrapper: { display: 'flex', minHeight: '100vh', background: '#f8fafc', position: 'fixed', inset: 0, zIndex: 10 },
   sidebar: { position: 'fixed', top: 0, bottom: 0, width: '280px', background: '#0f172a', display: 'flex', flexDirection: 'column', zIndex: 100, transition: 'left 0.3s ease' },
@@ -381,7 +447,7 @@ const styles = {
   navDivider: { padding: '1.5rem 1.25rem 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' },
   sidebarFooter: { padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' },
   logoutBtn: { width: '100%', padding: '0.75rem', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontSize: '0.9rem' },
-  main: { flex: 1, height: '100vh', overflowY: 'auto' },
+  main: { flex: 1, height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' },
   header: { height: '80px', background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 },
   headerTitle: { fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 },
   iconBtn: { background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' },
@@ -389,7 +455,7 @@ const styles = {
   userProfile: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
   avatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#0f172a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
   userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.95rem' },
-  content: { padding: '2.5rem' },
+  content: { padding: '2.5rem', flex: 1 },
   statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' },
   statCard: { background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1rem', alignItems: 'center' },
   statIconContainer: { width: '44px', height: '44px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
@@ -402,5 +468,27 @@ const styles = {
   tableRow: { borderBottom: '1px solid #f1f5f9' },
   badge: { padding: '4px 12px', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700 },
   roleBadge: { background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#475569' },
-  loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' }
+  loadingContainer: { textAlign: 'center', padding: '5rem', color: '#64748b' },
+  dashboardFooter: {
+    padding: '1.5rem 2.5rem',
+    borderTop: '1px solid #e2e8f0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    background: 'white',
+    marginTop: 'auto'
+  },
+  footerText: { margin: 0, color: '#94a3b8', fontSize: '0.8rem' },
+  footerStatus: { margin: 0, color: '#64748b', fontSize: '0.8rem' },
+  traceGrid: { display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' },
+  traceInfoCard: { background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' },
+  cardSubTitle: { fontSize: '0.9rem', color: '#0f172a', marginBottom: '1.5rem', borderBottom: '2px solid #10b981', display: 'inline-block' },
+  traceTimeline: { paddingLeft: '1rem', borderLeft: '2px dashed #e2e8f0' },
+  tlItem: { position: 'relative', paddingBottom: '2rem', paddingLeft: '1.5rem' },
+  tlMarker: { position: 'absolute', left: '-25px', top: '0', width: '12px', height: '12px', borderRadius: '50%', background: '#10b981', border: '3px solid white' },
+  tlContent: { background: 'white', padding: '1rem', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
+  tlTime: { fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' },
+  tlAction: { fontSize: '1rem', fontWeight: 700, color: '#0f172a' },
+  tlActor: { fontSize: '0.8rem', color: '#94a3b8' },
+  tlNote: { fontSize: '0.85rem', color: '#10b981', marginTop: '0.5rem', fontStyle: 'italic' }
 };
