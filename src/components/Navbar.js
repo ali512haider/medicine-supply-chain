@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
+import logo from '../assets/logo.png';
 
 export default function Navbar() {
   const { account, role, status, connectWallet, disconnectWallet } = useWeb3();
@@ -36,15 +37,14 @@ export default function Navbar() {
   return (
     <nav style={{
       ...styles.navbar,
-      background: scrolled ? 'rgba(255, 255, 255, 0.95)' : 'transparent',
-      boxShadow: scrolled ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-      borderBottom: scrolled ? '1px solid #e2e8f0' : 'none'
+      background: scrolled ? 'rgba(255, 255, 255, 0.85)' : 'transparent',
+      backdropFilter: scrolled ? 'blur(10px)' : 'none',
+      borderBottom: scrolled ? '1px solid rgba(226, 232, 240, 0.8)' : 'none'
     }}>
       <div className="container" style={styles.navContainer}>
         {/* Logo */}
         <Link to="/" style={styles.logo}>
-          <span style={styles.logoIcon}>💊</span>
-          <span style={styles.logoText}>MediChain</span>
+          <img src={logo} alt="MediChain" style={styles.logoImg} />
         </Link>
 
         {/* Desktop Links */}
@@ -80,10 +80,10 @@ export default function Navbar() {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button onClick={connectWallet} className="btn btn-outline" style={{ border: 'none' }}>
+              <button onClick={connectWallet} className="btn btn-outline" style={{ border: 'none', background: 'transparent' }}>
                 Login
               </button>
-              <Link to="/register" className="btn btn-primary">
+              <Link to="/register" className="btn btn-primary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.9rem' }}>
                 Register
               </Link>
             </div>
@@ -123,7 +123,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     zIndex: 1000,
-    transition: 'all 0.3s ease',
+    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   navContainer: {
     display: 'flex',
@@ -134,37 +134,32 @@ const styles = {
   logo: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
     textDecoration: 'none',
   },
-  logoIcon: {
-    fontSize: '1.5rem',
-  },
-  logoText: {
-    fontSize: '1.5rem',
-    fontWeight: 800,
-    color: '#0f172a',
-    letterSpacing: '-0.02em',
+  logoImg: {
+    height: '45px',
+    width: 'auto',
+    objectFit: 'contain',
   },
   desktopNav: {
     display: 'flex',
     gap: '2.5rem',
     alignItems: 'center',
-    '@media (max-width: 900px)': { display: 'none' }
   },
   navLink: {
     textDecoration: 'none',
-    fontSize: '0.95rem',
+    fontSize: '1rem',
     fontWeight: 600,
     position: 'relative',
     transition: 'color 0.2s ease',
   },
   activeIndicator: {
     position: 'absolute',
-    bottom: '-4px',
-    left: 0,
-    right: 0,
-    height: '2px',
+    bottom: '-6px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '20px',
+    height: '3px',
     background: 'var(--accent-primary)',
     borderRadius: '2px',
   },
@@ -188,10 +183,11 @@ const styles = {
     gap: '0.5rem',
     padding: '4px',
     paddingRight: '12px',
-    background: '#f1f5f9',
+    background: '#f8fafc',
     borderRadius: '99px',
     cursor: 'pointer',
     border: '1px solid #e2e8f0',
+    transition: 'all 0.2s ease',
   },
   avatar: {
     width: '32px',
@@ -217,7 +213,6 @@ const styles = {
     cursor: 'pointer',
     color: '#0f172a',
     padding: '0.5rem',
-    '@media (max-width: 900px)': { display: 'block' }
   },
   mobileMenu: {
     position: 'absolute',
@@ -240,3 +235,4 @@ const styles = {
     borderBottom: '1px solid #f1f5f9',
   }
 };
+
