@@ -192,7 +192,7 @@ export default function DistributorDashboard() {
 
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
         <div style={styles.sidebarBrand}>
-          <span style={{ color: 'var(--accent-primary)' }}>MediChain</span>
+          <span style={{ color: 'var(--accent-primary)' }}>MediTrace</span>
           <span style={styles.roleTag}>Distributor</span>
         </div>
         <nav style={styles.nav}>

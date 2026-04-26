@@ -44,7 +44,8 @@ export default function Navbar() {
       <div className="container" style={styles.navContainer}>
         {/* Logo */}
         <Link to="/" style={styles.logo}>
-          <img src={logo} alt="MediChain" style={styles.logoImg} />
+          <img src={logo} alt="MediTrace" style={styles.logoImg} />
+          <span style={styles.logoText}>Medi<span className="gradient-text">Trace</span></span>
         </Link>
 
         {/* Desktop Links */}
@@ -137,9 +138,16 @@ const styles = {
     textDecoration: 'none',
   },
   logoImg: {
-    height: '45px',
+    height: '40px',
     width: 'auto',
     objectFit: 'contain',
+  },
+  logoText: {
+    fontSize: '1.5rem',
+    fontWeight: 800,
+    color: 'var(--text-primary)',
+    marginLeft: '12px',
+    letterSpacing: '-0.02em',
   },
   desktopNav: {
     display: 'flex',

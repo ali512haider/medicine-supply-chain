@@ -64,15 +64,8 @@ function AppContent() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<Contact />} />
         
-        {/* Register is Public but handled via ProtectedRoute for wallet connection check */}
-        <Route 
-          path="/register" 
-          element={
-            <ProtectedRoute>
-              <Register />
-            </ProtectedRoute>
-          } 
-        />
+        {/* Register should be public so users can sign up */}
+        <Route path="/register" element={<Register />} />
         
         {/* Role-Based Private Routes */}
         <Route 

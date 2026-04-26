@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
+import Modal from '../components/Modal';
 
 // --- Professional Emerald SVG Icons ---
 const Icons = {
@@ -32,6 +33,10 @@ export default function ManufacturerDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  // Modal State
+  const [modal, setModal] = useState({ isOpen: false, title: '', batchNo: '' });
+  const [recallReason, setRecallReason] = useState('');
 
   // Data State
   const [batches, setBatches] = useState([]);
@@ -129,7 +134,6 @@ export default function ManufacturerDashboard() {
       const qty = window.BigInt(newBatch.qty);
       const price = window.BigInt(newBatch.price);
 
-      // Contract takes: batchNumber, productName, genericName, dosageForm, strength, manufacturerName, rmNames[], rmQtys[], rmUnits[], costPerUnit, currency, mfgDate, expiryDate, totalQuantity, qrCodeCID, metadataCID
       const tx = await contracts.product.addBatch(
         newBatch.number, newBatch.name, newBatch.generic, newBatch.type, newBatch.strength, "My Pharma",
         [], [], [], // Raw materials empty arrays
@@ -173,12 +177,17 @@ export default function ManufacturerDashboard() {
     } catch (err) { setActionMsg('❌ ' + (err.reason || 'Transfer Failed')); }
   };
 
-  const handleRecall = async (batchNo) => {
-    const reason = window.prompt("Reason for recall:");
-    if (!reason) return;
+  const openRecallModal = (batchNo) => {
+    setRecallReason('');
+    setModal({ isOpen: true, title: 'Recall Batch', batchNo });
+  };
+
+  const handleRecall = async () => {
+    if (!recallReason) return;
     try {
        setActionMsg('⏳ Recalling...');
-       const tx = await contracts.product.recallBatch(batchNo, reason);
+       setModal({ ...modal, isOpen: false });
+       const tx = await contracts.product.recallBatch(modal.batchNo, recallReason);
        await tx.wait();
        setActionMsg('✅ Recalled');
        fetchData();
@@ -187,10 +196,37 @@ export default function ManufacturerDashboard() {
 
   return (
     <div style={styles.dashboardWrapper}>
+      <Modal 
+        isOpen={modal.isOpen} 
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModal({ ...modal, isOpen: false })}>Cancel</button>
+            <button className="btn btn-danger" onClick={handleRecall} style={{ background: '#ef4444', color: 'white', border: 'none' }}>Confirm Recall</button>
+          </>
+        }
+      >
+        <div className="form-group">
+          <label className="form-label">Reason for Recall</label>
+          <textarea 
+            className="form-input" 
+            placeholder="e.g. Quality issue detected in testing..."
+            value={recallReason}
+            onChange={(e) => setRecallReason(e.target.value)}
+            rows="3"
+            autoFocus
+          />
+          <p style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '0.5rem', fontWeight: 600 }}>
+            ⚠️ WARNING: This will immediately mark the batch as recalled across the entire network.
+          </p>
+        </div>
+      </Modal>
+
       {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
         <div style={styles.sidebarBrand}>
-          <span style={{ color: 'var(--accent-primary)' }}>MediChain</span>
+          <span style={{ color: 'var(--accent-primary)' }}>MediTrace</span>
           <span style={styles.roleTag}>Manufacturer</span>
         </div>
         <nav style={styles.nav}>
@@ -251,7 +287,7 @@ export default function ManufacturerDashboard() {
                                 </span>
                               </td>
                               <td>
-                                {!b.isRecalled && <button onClick={() => handleRecall(b.batchNumber)} style={styles.rowBtnRecall}>Recall</button>}
+                                {!b.isRecalled && <button onClick={() => openRecallModal(b.batchNumber)} style={styles.rowBtnRecall}>Recall</button>}
                               </td>
                             </tr>
                           ))}

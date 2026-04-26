@@ -29,7 +29,7 @@ export default function Home() {
               <span className="gradient-text">Pharmaceuticals</span>
             </h1>
             <p style={styles.heroSubtitle}>
-              MediChain leverages advanced distributed ledger technology to ensure every pill is authentic, every batch is tracked, and every life is protected.
+              MediTrace leverages advanced distributed ledger technology to ensure every pill is authentic, every batch is tracked, and every life is protected.
             </p>
             <div style={styles.heroActions}>
               <Link to="/verify" className="btn btn-primary" style={{ padding: '1.2rem 2.5rem' }}>

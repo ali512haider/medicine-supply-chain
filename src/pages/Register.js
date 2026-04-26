@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import { useNavigate } from 'react-router-dom';
+import Modal from '../components/Modal';
 
 export default function Register() {
-  const { contracts, account, status } = useWeb3();
+  const { contracts, account, status, connectWallet } = useWeb3();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ name: '', role: '2' }); // Default to Manufacturer
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    location: '', 
+    role: '2' 
+  }); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,13 +26,18 @@ export default function Register() {
     setError('');
 
     try {
-      const tx = await contracts.registry.registerEntity(formData.name, parseInt(formData.role));
+      // Corrected function name and parameters according to RegistryContract.sol
+      const tx = await contracts.registry.requestRegistration(
+        parseInt(formData.role),
+        formData.name,
+        formData.email,
+        formData.location
+      );
       await tx.wait();
-      alert('Registration successful! Please wait for Admin approval.');
-      navigate('/');
+      setShowSuccess(true);
     } catch (err) {
       console.error(err);
-      setError(err.reason || 'Registration failed. You might already be registered.');
+      setError(err.reason || 'Registration failed. Check if you are already registered or all fields are filled.');
     } finally {
       setLoading(false);
     }
@@ -33,6 +45,21 @@ export default function Register() {
 
   return (
     <div className="page-content animate-fade-in" style={styles.page}>
+      <Modal 
+        isOpen={showSuccess} 
+        onClose={() => navigate('/')} 
+        title="Registration Submitted"
+        footer={<button className="btn btn-primary" onClick={() => navigate('/')}>Back to Home</button>}
+      >
+        <div style={{ textAlign: 'center', padding: '1rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
+          <p>Your registration request has been successfully submitted to the blockchain.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Please wait for a system administrator to verify and approve your organization.
+          </p>
+        </div>
+      </Modal>
+
       <div className="container" style={styles.container}>
         <div className="glass-panel" style={styles.card}>
           <div style={styles.header}>
@@ -53,7 +80,30 @@ export default function Register() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                style={styles.input}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Business Email</label>
+              <input 
+                type="email" 
+                className="form-input" 
+                placeholder="e.g. contact@pharma.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Business Location</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="e.g. New York, USA"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                required
               />
             </div>
 
@@ -63,7 +113,6 @@ export default function Register() {
                 className="form-input"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                style={styles.input}
               >
                 <option value="2">Manufacturer</option>
                 <option value="3">Distributor</option>
@@ -79,14 +128,25 @@ export default function Register() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
-              disabled={loading || status !== 'connected'}
-              style={styles.submitBtn}
-            >
-              {loading ? 'Processing Registration...' : 'Submit for Approval'}
-            </button>
+            {status !== 'connected' ? (
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={connectWallet}
+                style={{ ...styles.submitBtn, background: 'var(--accent-secondary)' }}
+              >
+                Connect Wallet to Register
+              </button>
+            ) : (
+              <button 
+                type="submit" 
+                className="btn btn-primary" 
+                disabled={loading}
+                style={styles.submitBtn}
+              >
+                {loading ? 'Processing Registration...' : 'Submit for Approval'}
+              </button>
+            )}
           </form>
 
           <p style={styles.footer}>

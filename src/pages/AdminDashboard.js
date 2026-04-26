@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
+import Modal from '../components/Modal';
 
 // --- Professional Emerald SVG Icons ---
 const Icons = {
@@ -32,6 +33,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  // Modal & Input State
+  const [modal, setModal] = useState({ isOpen: false, title: '', type: '', data: null });
+  const [licenseInput, setLicenseInput] = useState('');
 
   // Data State
   const [allUsers, setAllUsers] = useState([]);
@@ -66,6 +71,8 @@ export default function AdminDashboard() {
         const data = {
           address: addr,
           name: entity.name,
+          email: entity.email,
+          location: entity.location,
           role: Number(entity.role),
           status: Number(entity.status)
         };
@@ -113,25 +120,86 @@ export default function AdminDashboard() {
     fetchData();
   }, [fetchData]);
 
-  const handleUpdateStatus = async (userAddr, status) => {
+  const openApproveModal = (userAddr) => {
+    setLicenseInput('');
+    setModal({ isOpen: true, title: 'Approve Entity', type: 'approve', data: userAddr });
+  };
+
+  const openRejectModal = (userAddr) => {
+    setModal({ isOpen: true, title: 'Confirm Rejection', type: 'reject', data: userAddr });
+  };
+
+  const handleApprove = async () => {
+    if (!licenseInput) return;
+    const userAddr = modal.data;
     try {
-      setActionMsg('⏳ Updating Status...');
-      const tx = await contracts.registry.updateEntityStatus(userAddr, status);
+      setActionMsg('⏳ Approving...');
+      setModal({ ...modal, isOpen: false });
+      const tx = await contracts.registry.approveEntity(userAddr, licenseInput);
       await tx.wait();
-      setActionMsg('✅ Success!');
+      setActionMsg('✅ Approved!');
       fetchData();
-    } catch (err) { setActionMsg('❌ Failed'); }
+    } catch (err) { setActionMsg('❌ Approval Failed'); }
+  };
+
+  const handleReject = async () => {
+    const userAddr = modal.data;
+    try {
+      setActionMsg('⏳ Rejecting...');
+      setModal({ ...modal, isOpen: false });
+      const tx = await contracts.registry.rejectEntity(userAddr);
+      await tx.wait();
+      setActionMsg('✅ Rejected!');
+      fetchData();
+    } catch (err) { setActionMsg('❌ Rejection Failed'); }
   };
 
   const roleNames = ["None", "Admin", "Manufacturer", "Distributor", "Supplier", "Pharmacist"];
 
   return (
     <div style={styles.dashboardWrapper}>
+      <Modal 
+        isOpen={modal.isOpen} 
+        onClose={() => setModal({ ...modal, isOpen: false })}
+        title={modal.title}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModal({ ...modal, isOpen: false })}>Cancel</button>
+            <button 
+              className={`btn ${modal.type === 'reject' ? 'btn-danger' : 'btn-primary'}`} 
+              onClick={modal.type === 'approve' ? handleApprove : handleReject}
+              style={modal.type === 'reject' ? { background: '#ef4444', color: 'white', border: 'none' } : {}}
+            >
+              {modal.type === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'}
+            </button>
+          </>
+        }
+      >
+        {modal.type === 'approve' ? (
+          <div className="form-group">
+            <label className="form-label">Issue Business License Number</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. LIC-2024-MFR-001"
+              value={licenseInput}
+              onChange={(e) => setLicenseInput(e.target.value)}
+              autoFocus
+            />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+              This license will be recorded on the blockchain for the entity.
+            </p>
+          </div>
+        ) : (
+          <p>Are you sure you want to reject this registration request? This action cannot be undone.</p>
+        )}
+      </Modal>
+
       {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
 
       <div style={{ ...styles.sidebar, left: sidebarOpen ? '0' : '-280px' }}>
         <div style={styles.sidebarBrand}>
-          <span style={{ color: 'var(--accent-primary)' }}>MediChain</span>
+          <span style={{ color: 'var(--accent-primary)' }}>MediTrace</span>
           <span style={styles.roleTag}>System Admin</span>
         </div>
         <nav style={styles.nav}>
@@ -188,20 +256,26 @@ export default function AdminDashboard() {
                     <h3 style={styles.panelTitle}>Pending Approvals</h3>
                     <div style={styles.tableWrapper}>
                       <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Name</th><th>Role</th><th>Wallet Address</th><th>Action</th></tr></thead>
+                        <thead><tr style={styles.tableHeader}><th>Organization</th><th>Contact/Location</th><th>Role</th><th>Wallet</th><th>Action</th></tr></thead>
                         <tbody>
                           {allUsers.filter(u => u.status === 1).map(user => (
                             <tr key={user.address} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{user.name}</td>
+                              <td style={{padding: '1rem'}}>
+                                <div style={{fontWeight: 700}}>{user.name}</div>
+                                <div style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>{user.email}</div>
+                              </td>
+                              <td>
+                                <div style={{fontSize: '0.85rem'}}>{user.location}</div>
+                              </td>
                               <td><span style={styles.roleBadge}>{roleNames[user.role]}</span></td>
-                              <td style={{fontFamily: 'monospace'}}>{user.address}</td>
-                              <td style={{display: 'flex', gap: '0.5rem'}}>
-                                <button className="btn btn-primary" style={{padding: '0.4rem 1rem', fontSize: '0.8rem'}} onClick={() => handleUpdateStatus(user.address, 2)}>Approve</button>
-                                <button className="btn btn-outline" style={{padding: '0.4rem 1rem', fontSize: '0.8rem', color: '#ef4444', borderColor: '#fee2e2'}} onClick={() => handleUpdateStatus(user.address, 3)}>Reject</button>
+                              <td style={{fontFamily: 'monospace', fontSize: '0.8rem'}}>{user.address.slice(0,10)}...</td>
+                              <td style={{display: 'flex', gap: '0.5rem', padding: '1rem'}}>
+                                <button className="btn btn-primary" style={{padding: '0.4rem 0.75rem', fontSize: '0.75rem'}} onClick={() => openApproveModal(user.address)}>Approve</button>
+                                <button className="btn btn-outline" style={{padding: '0.4rem 0.75rem', fontSize: '0.75rem', color: '#ef4444', borderColor: '#fee2e2'}} onClick={() => openRejectModal(user.address)}>Reject</button>
                               </td>
                             </tr>
                           ))}
-                          {allUsers.filter(u => u.status === 1).length === 0 && <tr><td colSpan="4" style={{textAlign: 'center', padding: '2rem'}}>No pending users.</td></tr>}
+                          {allUsers.filter(u => u.status === 1).length === 0 && <tr><td colSpan="5" style={{textAlign: 'center', padding: '2rem'}}>No pending users.</td></tr>}
                         </tbody>
                       </table>
                     </div>
@@ -213,13 +287,19 @@ export default function AdminDashboard() {
                     <h3 style={styles.panelTitle}>Network User Directory</h3>
                     <div style={styles.tableWrapper}>
                       <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Name</th><th>Role</th><th>Wallet Address</th><th>Status</th></tr></thead>
+                        <thead><tr style={styles.tableHeader}><th>Organization</th><th>Details</th><th>Role</th><th>Status</th></tr></thead>
                         <tbody>
                           {allUsers.map(user => (
                             <tr key={user.address} style={styles.tableRow}>
-                              <td style={{fontWeight: 700}}>{user.name}</td>
+                              <td style={{padding: '1rem'}}>
+                                <div style={{fontWeight: 700}}>{user.name}</div>
+                                <div style={{fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-muted)'}}>{user.address}</div>
+                              </td>
+                              <td>
+                                <div style={{fontSize: '0.85rem'}}>{user.email}</div>
+                                <div style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>{user.location}</div>
+                              </td>
                               <td>{roleNames[user.role]}</td>
-                              <td style={{fontFamily: 'monospace'}}>{user.address}</td>
                               <td>
                                 <span style={{...styles.badge, 
                                   background: user.status === 2 ? '#f0fdf4' : (user.status === 1 ? '#fff7ed' : '#fee2e2'),

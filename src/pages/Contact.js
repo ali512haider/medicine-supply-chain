@@ -43,7 +43,7 @@ export default function Contact() {
               <div style={styles.icon}>✉️</div>
               <div>
                 <h4 style={{ margin: 0 }}>Email Us</h4>
-                <p style={{ margin: '4px 0 0', color: '#64748b' }}>support@medichain.io</p>
+                <p style={{ margin: '4px 0 0', color: '#64748b' }}>support@MediTrace.io</p>
               </div>
             </div>
             <div style={styles.infoCard}>
