@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
+import Footer from '../components/Footer';
 
 export default function VerifyProduct() {
   const { contracts } = useWeb3();
@@ -148,6 +149,7 @@ export default function VerifyProduct() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

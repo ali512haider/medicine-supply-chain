@@ -1,6 +1,7 @@
 import React from 'react';
 import softwareImg from '../assets/software_mockup.png';
 import founderImg from '../assets/founder.png';
+import Footer from '../components/Footer';
 
 export default function AboutUs() {
   return (
@@ -122,6 +123,7 @@ export default function AboutUs() {
         </section>
 
       </div>
+      <Footer />
     </div>
   );
 }

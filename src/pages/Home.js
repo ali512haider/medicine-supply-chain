@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 import heroImage from '../assets/hero.png';
+import Footer from '../components/Footer';
 
 export default function Home() {
   const { account, role } = useWeb3();
@@ -154,32 +155,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer / Call to Action */}
-      <footer style={styles.footer}>
-        <div className="container" style={styles.footerContent}>
-          <div style={styles.footerInfo}>
-             <h3 style={{fontSize: '1.5rem', fontWeight: 900, marginBottom: '1rem'}}>Medi<span className="gradient-text">Trace</span></h3>
-             <p style={{color: '#94a3b8', fontSize: '0.9rem'}}>Enterprise Blockchain for Pharmaceutical Integrity.</p>
-          </div>
-          <div style={styles.footerLinks}>
-             <div style={styles.footerLinkCol}>
-                <h4 style={styles.footerLinkTitle}>Company</h4>
-                <Link to="/about" style={styles.footerLink}>About Us</Link>
-                <Link to="/contact" style={styles.footerLink}>Contact</Link>
-             </div>
-             <div style={styles.footerLinkCol}>
-                <h4 style={styles.footerLinkTitle}>Software</h4>
-                <Link to="/verify" style={styles.footerLink}>Verify Product</Link>
-                <Link to="/register" style={styles.footerLink}>Join Network</Link>
-             </div>
-          </div>
-        </div>
-        <div style={styles.footerBottom}>
-           <div className="container">
-              <p style={{margin: 0, color: '#475569', fontSize: '0.8rem'}}>© 2026 MediTrace Ledger. Designed at UET Taxila.</p>
-           </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
@@ -351,12 +327,4 @@ const styles = {
   logHeader: { fontSize: '0.8rem', fontWeight: 800, marginBottom: '1.5rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' },
   logDot: { width: '8px', height: '8px', background: '#ef4444', borderRadius: '50%', animation: 'pulse 2s infinite' },
   logItem: { padding: '1rem 0', borderBottom: '1px solid #f1f5f9' },
-
-  footer: { padding: '8rem 0 0', background: '#0f172a', color: 'white' },
-  footerContent: { display: 'flex', justifyContent: 'space-between', paddingBottom: '6rem' },
-  footerLinks: { display: 'flex', gap: '6rem' },
-  footerLinkCol: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-  footerLinkTitle: { fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: '1rem' },
-  footerLink: { color: '#94a3b8', textDecoration: 'none', transition: 'color 0.2s ease' },
-  footerBottom: { padding: '2rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }
 };
