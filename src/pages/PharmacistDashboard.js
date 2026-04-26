@@ -69,10 +69,15 @@ export default function PharmacistDashboard() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const [entityName, setEntityName] = useState('Pharmacist Node');
+
   const fetchData = useCallback(async () => {
-    if (!contracts.transfer || !contracts.product || !account) return;
+    if (!contracts.transfer || !contracts.product || !contracts.registry || !account) return;
     setLoading(true);
     try {
+      const myEntity = await contracts.registry.getEntity(account);
+      setEntityName(myEntity.name);
+
       const bNos = await contracts.product.getAllBatchNumbers();
       
       const inRequests = await contracts.transfer.getMyPendingInbox();
@@ -295,7 +300,7 @@ export default function PharmacistDashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
-            <div style={styles.userProfile}><div style={{...styles.avatar, background: '#10b981'}}>PH</div>{!isMobile && <span style={styles.userName}>Pharmacist</span>}</div>
+            <div style={styles.userProfile}><div style={{...styles.avatar, background: '#10b981'}}>PH</div>{!isMobile && <span style={styles.userName}>{entityName}</span>}</div>
           </div>
         </header>
 
@@ -414,7 +419,10 @@ export default function PharmacistDashboard() {
                         <p style={{fontSize: '0.8rem', color: '#64748b'}}>MediTrace Blockchain Verified Authenticity</p>
                      </div>
                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '30px', fontSize: '0.9rem'}}>
-                        <div><strong>CUSTOMER:</strong><br/>{lastInvoice.customer}</div>
+                        <div>
+                           <strong>PHARMACY:</strong><br/>{entityName}<br/><span style={{fontSize: '0.75rem', color: '#64748b'}}>{account}</span><br/><br/>
+                           <strong>CUSTOMER:</strong><br/>{lastInvoice.customer}
+                        </div>
                         <div style={{textAlign: 'right'}}><strong>DATE:</strong><br/>{lastInvoice.date}<br/><strong>RECEIPT #:</strong> RC-{Math.floor(Math.random()*100000)}</div>
                      </div>
                      <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '20px'}}>

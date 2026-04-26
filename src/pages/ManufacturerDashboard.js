@@ -355,7 +355,7 @@ export default function ManufacturerDashboard() {
             {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
             <div style={styles.userProfile}>
                <div style={styles.avatar}>{account?.slice(2,4).toUpperCase()}</div>
-               {!isMobile && <span style={styles.userName}>Manufacturer</span>}
+               {!isMobile && <span style={styles.userName}>{entityName}</span>}
             </div>
           </div>
         </header>
@@ -490,7 +490,10 @@ export default function ManufacturerDashboard() {
                         <p style={{fontSize: '0.8rem', color: '#64748b'}}>MediTrace Verified Blockchain Shipment</p>
                      </div>
                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '40px', fontSize: '0.9rem'}}>
-                        <div><strong>RECIPIENT DISTRIBUTOR:</strong><br/>{lastInvoice.distributor}<br/>{lastInvoice.distributorAddr}</div>
+                        <div>
+                           <strong>DISPATCHED BY:</strong><br/>{entityName}<br/><span style={{fontSize: '0.75rem', color: '#64748b'}}>{account}</span><br/><br/>
+                           <strong>RECIPIENT DISTRIBUTOR:</strong><br/>{lastInvoice.distributor}<br/><span style={{fontSize: '0.75rem', color: '#64748b'}}>{lastInvoice.distributorAddr}</span>
+                        </div>
                         <div style={{textAlign: 'right'}}><strong>DISPATCH DATE:</strong><br/>{lastInvoice.date}<br/><strong>INVOICE #:</strong> DISP-{Math.floor(Math.random()*100000)}</div>
                      </div>
                      <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '30px'}}>

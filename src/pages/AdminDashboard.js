@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import Modal from '../components/Modal';
+import QRScanner from '../components/QRScanner';
 
 // --- Professional Emerald SVG Icons ---
 const Icons = {
@@ -52,6 +53,7 @@ export default function AdminDashboard() {
   const [traceData, setTraceData] = useState(null);
   const [traceHistory, setTraceHistory] = useState([]);
   const [traceError, setTraceError] = useState('');
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -152,6 +154,12 @@ export default function AdminDashboard() {
     }
   };
 
+  const onScanSuccess = (decodedText) => {
+    setIsScannerOpen(false);
+    setTraceBN(decodedText.trim());
+    handleTrace(null, decodedText.trim());
+  };
+
   const openApproveModal = (entity) => {
     setLicenseInput('');
     setModal({ isOpen: true, title: `Approve ${entity.name}`, type: 'approve', data: entity });
@@ -226,6 +234,13 @@ export default function AdminDashboard() {
           <p>Are you sure you want to reject this registration request? This action cannot be undone.</p>
         )}
       </Modal>
+
+      <QRScanner 
+        isOpen={isScannerOpen} 
+        onClose={() => setIsScannerOpen(false)} 
+        onScanSuccess={onScanSuccess} 
+        onScanError={() => {}} 
+      />
 
       {isMobile && sidebarOpen && <div style={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
 
@@ -371,6 +386,9 @@ export default function AdminDashboard() {
                         style={{ flex: 1 }}
                       />
                       <button type="submit" className="btn btn-primary">Trace Batch</button>
+                      <button type="button" onClick={() => setIsScannerOpen(true)} className="btn btn-outline" style={{display: 'flex', alignItems: 'center', gap: '0.5rem', borderColor: '#10b981', color: '#10b981'}}>
+                        <Icons.Search /> Scan QR
+                      </button>
                     </form>
 
                     {traceError && <div style={{ color: '#ef4444', background: '#fef2f2', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>{traceError}</div>}

@@ -74,10 +74,15 @@ export default function DistributorDashboard() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const [entityName, setEntityName] = useState('Distributor Node');
+
   const fetchData = useCallback(async () => {
     if (!contracts.transfer || !contracts.product || !contracts.registry || !account) return;
     setLoading(true);
     try {
+      const myEntity = await contracts.registry.getEntity(account);
+      setEntityName(myEntity.name);
+
       const bNos = await contracts.product.getAllBatchNumbers();
       
       const inRequests = await contracts.transfer.getMyPendingInbox();
@@ -284,7 +289,7 @@ export default function DistributorDashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
-            <div style={styles.userProfile}><div style={styles.avatar}>DI</div>{!isMobile && <span style={styles.userName}>Distributor Node</span>}</div>
+            <div style={styles.userProfile}><div style={styles.avatar}>DI</div>{!isMobile && <span style={styles.userName}>{entityName}</span>}</div>
           </div>
         </header>
 
@@ -404,7 +409,10 @@ export default function DistributorDashboard() {
                         <p style={{fontSize: '0.8rem', color: '#64748b'}}>MediTrace Blockchain Verified Distribution</p>
                      </div>
                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '40px', fontSize: '0.9rem'}}>
-                        <div><strong>RECIPIENT SUPPLIER:</strong><br/>{lastInvoice.receiver}<br/>{lastInvoice.receiverAddr}</div>
+                        <div>
+                           <strong>DISPATCHED BY:</strong><br/>{entityName}<br/><span style={{fontSize: '0.75rem', color: '#64748b'}}>{account}</span><br/><br/>
+                           <strong>RECIPIENT SUPPLIER:</strong><br/>{lastInvoice.receiver}<br/><span style={{fontSize: '0.75rem', color: '#64748b'}}>{lastInvoice.receiverAddr}</span>
+                        </div>
                         <div style={{textAlign: 'right'}}><strong>DISPATCH DATE:</strong><br/>{lastInvoice.date}<br/><strong>MANIFEST #:</strong> WH-{Math.floor(Math.random()*100000)}</div>
                      </div>
                      <table style={{width: '100%', borderCollapse: 'collapse', marginBottom: '30px'}}>
