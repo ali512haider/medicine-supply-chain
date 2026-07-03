@@ -20,7 +20,7 @@ export default function Home() {
     <div className="page-content animate-fade-in" style={{ padding: 0 }}>
       {/* Hero Section - The First Impression */}
       <section style={styles.hero}>
-        <div className="container" style={styles.heroGrid}>
+        <div className="container home-hero-grid" style={styles.heroGrid}>
           <div style={styles.heroContent} className="animate-slide-up">
             <div style={styles.badge}>
               <span style={styles.badgeDot}></span>
@@ -34,7 +34,7 @@ export default function Home() {
               An enterprise-grade decentralized platform for pharmaceutical transparency, 
               authenticity, and real-time tracking across every medical handoff.
             </p>
-            <div style={styles.heroActions}>
+            <div style={styles.heroActions} className="home-hero-actions">
               <Link to="/register" className="btn btn-primary" style={styles.primaryBtn}>
                 Get Started
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginLeft: '8px'}}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -43,7 +43,7 @@ export default function Home() {
                 Verify Product
               </Link>
             </div>
-            <div style={styles.heroTrust}>
+            <div style={styles.heroTrust} className="home-hero-trust">
               <div style={styles.trustItem}>
                 <strong>10M+</strong> Verified Units
               </div>
@@ -122,7 +122,7 @@ export default function Home() {
 
       {/* Live Network Pulse - Real Software Feel */}
       <section style={styles.pulseSection}>
-        <div className="container" style={styles.pulseGrid}>
+        <div className="container home-pulse-grid" style={styles.pulseGrid}>
           <div style={styles.pulseTextSide}>
             <h2 style={{...styles.sectionTitle, textAlign: 'left', marginTop: 0}}>The Pulse of <br /><span className="gradient-text">Medicine Security</span></h2>
             <p style={styles.description}>
@@ -211,7 +211,7 @@ const styles = {
     boxShadow: '0 0 10px var(--accent-primary)',
   },
   heroTitle: {
-    fontSize: '4.5rem',
+    fontSize: 'clamp(2rem, 6vw, 4.5rem)',
     fontWeight: 900,
     lineHeight: '1.1',
     letterSpacing: '-0.03em',

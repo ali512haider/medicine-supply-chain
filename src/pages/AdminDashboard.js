@@ -397,7 +397,7 @@ export default function AdminDashboard() {
                     {traceError && <div style={{ color: '#ef4444', background: '#fef2f2', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>{traceError}</div>}
 
                     {traceData && (
-                      <div style={styles.traceGrid}>
+                      <div className="dash-trace-grid" style={styles.traceGrid}>
                         <div style={styles.traceInfoCard}>
                           <h4 style={styles.cardSubTitle}>Batch Specifications</h4>
                           <TraceItem label="Product" value={traceData.productName} />
@@ -477,7 +477,7 @@ const styles = {
   avatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#0f172a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 },
   userName: { color: '#0f172a', fontWeight: 600, fontSize: '0.95rem' },
   content: { padding: '2.5rem', flex: 1 },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' },
+  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1.25rem' },
   statCard: { background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', gap: '1rem', alignItems: 'center' },
   statIconContainer: { width: '44px', height: '44px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   statTitle: { color: '#64748b', fontSize: '0.8rem', fontWeight: 500 },

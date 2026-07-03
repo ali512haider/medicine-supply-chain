@@ -11,7 +11,7 @@ export default function AboutUs() {
 
         {/* Software Description Section */}
         <section style={styles.section} className="animate-slide-up">
-          <div style={styles.softwareGrid}>
+          <div className="about-software-grid" style={styles.softwareGrid}>
             <div style={styles.textSide}>
               <h1 style={styles.mainTitle}>About the <span className="gradient-text">Software</span></h1>
               <p style={styles.description}>
@@ -33,7 +33,7 @@ export default function AboutUs() {
         </section>
 
         {/* Mission & Vision Section */}
-        <section style={styles.gridSection}>
+        <section className="about-grid-section" style={styles.gridSection}>
           <div style={styles.visionCard} className="animate-slide-up delay-1">
             <div style={styles.iconCircle}>
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>
@@ -86,7 +86,7 @@ export default function AboutUs() {
         {/* Founders Section */}
         <section style={styles.founderSection} className="animate-slide-up delay-4">
           <h2 style={styles.sectionTitle}>Meet the <span className="gradient-text">Founders</span></h2>
-          <div style={styles.foundersGrid}>
+          <div className="about-founders-grid" style={styles.foundersGrid}>
             {/* Founder 1 */}
             <div className="glass-panel" style={styles.founderCard}>
               <img src={founderImg} alt="Ali Haider Aziz" style={styles.founderImg} />
@@ -139,7 +139,7 @@ const StepItem = ({ icon, title, desc }) => (
 
 const styles = {
   section: { marginTop: '6rem' },
-  mainTitle: { fontSize: '3.5rem', fontWeight: 900, marginBottom: '2rem', color: 'var(--text-primary)' },
+  mainTitle: { fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '2rem', color: 'var(--text-primary)' },
   softwareGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' },
   textSide: { textAlign: 'left' },
   description: { fontSize: '1.2rem', lineHeight: '1.8', color: 'var(--text-secondary)', marginBottom: '1.5rem' },
@@ -151,7 +151,7 @@ const styles = {
   iconCircle: { marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' },
   cardTitle: { fontSize: '1.8rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' },
   cardText: { fontSize: '1.1rem', lineHeight: '1.7', color: 'var(--text-secondary)' },
-  sectionTitle: { fontSize: '2.8rem', fontWeight: 900, textAlign: 'center', marginBottom: '4rem', marginTop: '4rem' },
+  sectionTitle: { fontSize: 'clamp(1.6rem, 4vw, 2.8rem)', fontWeight: 900, textAlign: 'center', marginBottom: '4rem', marginTop: '4rem' },
   stepsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem' },
   stepItem: { padding: '2.5rem 2rem', textAlign: 'center', position: 'relative', transition: 'transform 0.3s ease' },
   stepIconBox: { width: '50px', height: '50px', background: 'var(--accent-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 10px 20px var(--accent-glow)' },

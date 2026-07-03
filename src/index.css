@@ -285,9 +285,169 @@ h2 { line-height: 1.2; }
   gap: 1rem;
 }
 
-/* Responsive Hide/Show */
+/* ============================================
+   RESPONSIVE STYLES - Mobile First
+   ============================================ */
+
+/* --- Navbar --- */
 @media (max-width: 768px) {
   .hide-mobile { display: none !important; }
   .container { padding: 0 1.25rem; }
+
+  /* Hamburger menu toggle */
+  nav [style*="display: none"] { display: flex !important; }
 }
+
+/* --- Public Pages: Grids stack on mobile --- */
+@media (max-width: 900px) {
+  /* Hero section */
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    text-align: center;
+  }
+  .hero-grid .hero-content { text-align: center; }
+  .hero-grid .hero-actions { justify-content: center; }
+  .hero-grid .hero-trust { justify-content: center; }
+
+  /* Home pulse section */
+  .pulse-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* About page grids */
+  .software-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  .software-grid .image-side { display: none; }
+  .grid-section {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+  .founders-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Contact page grid */
+  .contact-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* Section titles scale down */
+  .section-title-lg {
+    font-size: 2rem !important;
+  }
+}
+
+/* --- Dashboard: Tables scroll horizontally --- */
+.dash-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.dash-table-wrap table {
+  min-width: 500px;
+}
+
+/* --- Dashboard: Form grids stack on mobile --- */
+@media (max-width: 768px) {
+  .dash-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dash-shipment-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  .dash-trace-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+  .dash-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Dashboard content padding */
+  .dash-content {
+    padding: 1rem !important;
+  }
+  .dash-header {
+    padding: 0 1rem !important;
+  }
+  .dash-footer {
+    padding: 1rem !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    text-align: center !important;
+  }
+
+  /* Glass panel padding on mobile */
+  .glass-panel {
+    padding: 1.25rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Hero title font size */
+  .hero-title-lg {
+    font-size: 2.5rem !important;
+  }
+
+  /* Home page hero */
+  .home-hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .home-hero-actions {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+  .home-pulse-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  .home-hero-trust {
+    justify-content: center !important;
+  }
+
+  /* About page */
+  .about-software-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+  .about-grid-section {
+    grid-template-columns: 1fr !important;
+  }
+  .about-founders-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Contact page */
+  .contact-page-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* Marquee partners wrap */
+  .partners-marquee {
+    gap: 2rem !important;
+    justify-content: center !important;
+  }
+
+  /* Navbar menu toggle show on mobile */
+  .nav-menu-toggle {
+    display: flex !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+  .dash-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .btn {
+    font-size: 0.9rem !important;
+    padding: 0.75rem 1.25rem !important;
+  }
+}
+
 

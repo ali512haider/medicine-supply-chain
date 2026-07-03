@@ -72,7 +72,7 @@ export default function Contact() {
           </p>
         </header>
 
-        <div style={styles.grid}>
+        <div className="contact-page-grid" style={styles.grid}>
           {/* Contact Cards */}
           <div style={styles.cardsCol}>
             {/* Ali Haider Aziz */}
@@ -189,9 +189,9 @@ export default function Contact() {
 
 const styles = {
   header: { textAlign: 'center', marginBottom: '5rem', marginTop: '4rem' },
-  title: { fontSize: '3.5rem', fontWeight: 900, marginBottom: '1rem' },
+  title: { fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, marginBottom: '1rem' },
   subtitle: { fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0 auto' },
-  grid: { display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '3rem', '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } },
+  grid: { display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '3rem' },
   cardsCol: { display: 'flex', flexDirection: 'column', gap: '1.5rem' },
   contactCard: { padding: '2rem', borderRadius: '24px', background: 'white', border: '1px solid var(--border-color)', transition: 'all 0.3s ease' },
   cardHeader: { display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' },
