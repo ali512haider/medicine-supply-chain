@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 import Modal from '../components/Modal';
 import QRCodeDisplay from '../components/QRCodeDisplay';
@@ -36,6 +37,8 @@ const Icons = {
 
 export default function ManufacturerDashboard() {
   const { contracts, account, disconnectWallet } = useWeb3();
+  const navigate = useNavigate();
+  const handleLogout = () => { navigate('/'); disconnectWallet(); };
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
@@ -382,7 +385,7 @@ export default function ManufacturerDashboard() {
           <NavItem active={activeTab === 'recalled'} onClick={() => setActiveTab('recalled')} Icon={Icons.Alert} label="Recalled" count={stats.recalled} />
         </nav>
         <div style={styles.sidebarFooter}>
-          <button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
+          <button onClick={handleLogout} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
         </div>
       </div>
 

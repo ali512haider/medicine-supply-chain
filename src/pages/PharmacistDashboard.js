@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 import QRCodeDisplay from '../components/QRCodeDisplay';
 import QRScanner from '../components/QRScanner';
@@ -39,6 +40,8 @@ const Icons = {
 
 export default function PharmacistDashboard() {
   const { contracts, account, disconnectWallet } = useWeb3();
+  const navigate = useNavigate();
+  const handleLogout = () => { navigate('/'); disconnectWallet(); };
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
@@ -325,7 +328,7 @@ export default function PharmacistDashboard() {
           <NavItem active={activeTab === 'sale'} onClick={() => setActiveTab('sale')} Icon={Icons.Sale} label="Point of Sale" />
           <NavItem active={activeTab === 'history'} onClick={() => setActiveTab('history')} Icon={Icons.History} label="Sales Record" />
         </nav>
-        <div style={styles.sidebarFooter}><button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button></div>
+        <div style={styles.sidebarFooter}><button onClick={handleLogout} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button></div>
       </div>
 
       <div style={{ ...styles.main, marginLeft: isMobile ? '0' : '280px' }}>

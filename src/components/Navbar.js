@@ -16,6 +16,8 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleLogout = () => { navigate('/'); disconnectWallet(); };
+
   const getDashboardRoute = () => {
     switch (role) {
       case 'Admin': return '/admin';
@@ -72,7 +74,7 @@ export default function Navbar() {
               <Link to={getDashboardRoute()} className="btn btn-primary" style={styles.dashboardBtn}>
                 Dashboard
               </Link>
-              <div style={styles.accountBadge} onClick={disconnectWallet}>
+              <div style={styles.accountBadge} onClick={handleLogout}>
                 <div style={styles.avatar}>{account.slice(2, 4).toUpperCase()}</div>
                 <span className="hide-mobile" style={styles.accountAddr}>
                   {account.substring(0, 6)}...{account.substring(account.length - 4)}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWeb3 } from '../context/Web3Context';
 import Modal from '../components/Modal';
 import QRScanner from '../components/QRScanner';
@@ -33,6 +34,8 @@ const Icons = {
 
 export default function AdminDashboard() {
   const { contracts, account, disconnectWallet } = useWeb3();
+  const navigate = useNavigate();
+  const handleLogout = () => { navigate('/'); disconnectWallet(); };
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
@@ -257,7 +260,7 @@ export default function AdminDashboard() {
           <NavItem active={activeTab === 'trace'} onClick={() => setActiveTab('trace')} Icon={Icons.Search} label="Trace Journey" />
         </nav>
         <div style={styles.sidebarFooter}>
-           <button onClick={disconnectWallet} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
+           <button onClick={handleLogout} style={styles.logoutBtn}><Icons.LogOut /> <span>Disconnect</span></button>
         </div>
       </div>
 
