@@ -16,7 +16,6 @@ export default function VerifyProduct() {
     setLoading(true);
     setError('');
     setProduct(null);
-
     try {
       const b = await contracts.product.getBatch(targetBN);
       if (!b.productName) {
@@ -24,7 +23,7 @@ export default function VerifyProduct() {
         setLoading(false);
         return;
       }
-      
+
       const formatDate = (ts) => {
         const d = new Date(Number(ts) * 1000);
         return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
@@ -54,11 +53,11 @@ export default function VerifyProduct() {
 
   return (
     <div className="verify-page-container" style={styles.container}>
-      <QRScanner 
-        isOpen={isScannerOpen} 
-        onClose={() => setIsScannerOpen(false)} 
-        onScanSuccess={onScanSuccess} 
-        onScanError={() => {}} 
+      <QRScanner
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={onScanSuccess}
+        onScanError={() => { }}
       />
 
       <div className="verify-card animate-slide-up" style={styles.card}>
@@ -69,13 +68,13 @@ export default function VerifyProduct() {
 
         <div style={styles.searchSection}>
           <div className="verify-input-group" style={styles.inputGroup}>
-            <input 
-              style={styles.input} 
+            <input
+              style={styles.input}
               placeholder="Enter Batch Number"
               value={batchNumber}
               onChange={(e) => setBatchNumber(e.target.value)}
             />
-            <button onClick={() => handleVerify()} className="btn btn-primary verify-btn" disabled={loading} style={{padding: '0 2rem'}}>
+            <button onClick={() => handleVerify()} className="btn btn-primary verify-btn" disabled={loading} style={{ padding: '0 2rem' }}>
               {loading ? '...' : 'Verify'}
             </button>
           </div>
@@ -95,37 +94,37 @@ export default function VerifyProduct() {
         {product && (
           <div className="animate-fade-in" style={styles.results}>
             <div style={styles.statusBox}>
-                <div style={{...styles.statusBadge, background: product.status === 0 ? '#10b981' : '#ef4444'}}>
-                  {product.status === 0 ? '✓ VERIFIED AUTHENTIC' : '⚠ WARNING'}
-                </div>
-                {product.status !== 0 && (
-                  <p style={styles.warningText}>
-                    {product.status === 2 ? 'This batch has been RECALLED.' : 'This batch has EXPIRED.'}
-                  </p>
-                )}
+              <div style={{ ...styles.statusBadge, background: product.status === 0 ? '#10b981' : '#ef4444' }}>
+                {product.status === 0 ? '✓ VERIFIED AUTHENTIC' : '⚠ WARNING'}
+              </div>
+              {product.status !== 0 && (
+                <p style={styles.warningText}>
+                  {product.status === 2 ? 'This batch has been RECALLED.' : 'This batch has EXPIRED.'}
+                </p>
+              )}
             </div>
 
             <div className="verify-info-grid" style={styles.infoGrid}>
-                <div style={styles.infoItem}>
-                    <label style={styles.infoLabel}>Medicine Name</label>
-                    <div style={styles.infoValue}>{product.name}</div>
-                </div>
-                <div style={styles.infoItem}>
-                    <label style={styles.infoLabel}>Manufacturer</label>
-                    <div style={styles.infoValue}>{product.manufacturer}</div>
-                </div>
-                <div style={styles.infoItem}>
-                    <label style={styles.infoLabel}>Manufacturing Date</label>
-                    <div style={styles.infoValue}>{product.mfg}</div>
-                </div>
-                <div style={styles.infoItem}>
-                    <label style={styles.infoLabel}>Expiry Date</label>
-                    <div style={{...styles.infoValue, color: product.status === 1 ? '#ef4444' : '#0f172a'}}>{product.exp}</div>
-                </div>
+              <div style={styles.infoItem}>
+                <label style={styles.infoLabel}>Medicine Name</label>
+                <div style={styles.infoValue}>{product.name}</div>
+              </div>
+              <div style={styles.infoItem}>
+                <label style={styles.infoLabel}>Manufacturer</label>
+                <div style={styles.infoValue}>{product.manufacturer}</div>
+              </div>
+              <div style={styles.infoItem}>
+                <label style={styles.infoLabel}>Manufacturing Date</label>
+                <div style={styles.infoValue}>{product.mfg}</div>
+              </div>
+              <div style={styles.infoItem}>
+                <label style={styles.infoLabel}>Expiry Date</label>
+                <div style={{ ...styles.infoValue, color: product.status === 1 ? '#ef4444' : '#0f172a' }}>{product.exp}</div>
+              </div>
             </div>
-            
+
             <div style={styles.footerNote}>
-                This data is pulled directly from the Blockchain Ledger. It cannot be tampered with or modified by third parties.
+              This data is pulled directly from the Blockchain Ledger. It cannot be tampered with or modified by third parties.
             </div>
           </div>
         )}
