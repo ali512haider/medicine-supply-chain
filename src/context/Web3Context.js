@@ -62,6 +62,16 @@ export const Web3Provider = ({ children }) => {
     try {
       setStatus('connecting');
       const web3Provider = new ethers.BrowserProvider(window.ethereum);
+      const network = await web3Provider.getNetwork();
+      const chainId = Number(network.chainId);
+
+      // Verify network is Sepolia (11155111) or local Ganache (1337 / 5777)
+      if (chainId !== 11155111 && chainId !== 1337 && chainId !== 5777) {
+        alert("Please switch your MetaMask network to Ethereum Sepolia Testnet (or local Ganache) to interact with the contracts!");
+        setStatus('error');
+        return;
+      }
+
       const accounts = await web3Provider.send("eth_requestAccounts", []);
       const web3Signer = await web3Provider.getSigner();
       
