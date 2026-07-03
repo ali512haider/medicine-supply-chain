@@ -385,7 +385,7 @@ export default function PharmacistDashboard() {
           {loading ? ( <div style={styles.loadingContainer}>⌛ Syncing Pharmacy Node...</div> ) : (
             <>
               {activeTab === 'overview' && (
-                <div style={styles.statsGrid}>
+                <div className="dash-stats-grid" style={styles.statsGrid}>
                   <StatCard title="Medicines on Shelf" value={stats.stock} Icon={Icons.Inventory} color="#10b981" />
                   <StatCard title="Total Sales" value={stats.sales} Icon={Icons.Sale} color="#3b82f6" />
                   <StatCard title="Incoming Stock" value={stats.incoming} Icon={Icons.Inbox} color="#f59e0b" />
@@ -400,40 +400,44 @@ export default function PharmacistDashboard() {
                       <Icons.Scanner /> Scan to Receive
                     </button>
                   </div>
-                  <table style={styles.table}>
-                    <thead><tr style={styles.tableHeader}><th>Medicine</th><th>Batch #</th><th>Supplier</th><th>Qty</th><th>Action</th></tr></thead>
-                    <tbody>
-                      {inbox.map(req => (
-                        <tr key={req.id.toString()} style={styles.tableRow}>
-                          <td style={{fontWeight: 700}}>{req.productName}</td>
-                          <td>{req.batchNumber}</td>
-                          <td style={{fontSize: '0.8rem'}}>{req.sender.slice(0,10)}...</td>
-                          <td>{req.quantity}</td>
-                          <td><button onClick={() => handleAcceptTransfer(req.id)} className="btn btn-primary" style={{padding: '4px 12px', fontSize: '0.8rem'}}>Accept</button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="dash-table-wrap" style={styles.tableWrapper}>
+                    <table style={styles.table}>
+                      <thead><tr style={styles.tableHeader}><th>Medicine</th><th>Batch #</th><th>Supplier</th><th>Qty</th><th>Action</th></tr></thead>
+                      <tbody>
+                        {inbox.map(req => (
+                          <tr key={req.id.toString()} style={styles.tableRow}>
+                            <td style={{fontWeight: 700}}>{req.productName}</td>
+                            <td>{req.batchNumber}</td>
+                            <td style={{fontSize: '0.8rem'}}>{req.sender.slice(0,10)}...</td>
+                            <td>{req.quantity}</td>
+                            <td><button onClick={() => handleAcceptTransfer(req.id)} className="btn btn-primary" style={{padding: '4px 12px', fontSize: '0.8rem'}}>Accept</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
               {activeTab === 'inventory' && (
                 <div className="glass-panel">
                   <h3 style={styles.panelTitle}>Shelf Inventory</h3>
-                  <table style={styles.table}>
-                    <thead><tr style={styles.tableHeader}><th>Batch QR</th><th>Medicine Name</th><th>Batch #</th><th>Price</th><th>Stock</th></tr></thead>
-                    <tbody>
-                      {inventory.map(b => (
-                        <tr key={b.batchNumber} style={styles.tableRow}>
-                          <td style={{padding: '10px'}}><QRCodeDisplay value={b.batchNumber} size={60} showActions={true} /></td>
-                          <td style={{fontWeight: 700}}>{b.productName}</td>
-                          <td>{b.batchNumber}</td>
-                          <td>{b.price} {b.currency}</td>
-                          <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>{b.quantity} units</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="dash-table-wrap" style={styles.tableWrapper}>
+                    <table style={styles.table}>
+                      <thead><tr style={styles.tableHeader}><th>Batch QR</th><th>Medicine Name</th><th>Batch #</th><th>Price</th><th>Stock</th></tr></thead>
+                      <tbody>
+                        {inventory.map(b => (
+                          <tr key={b.batchNumber} style={styles.tableRow}>
+                            <td style={{padding: '10px'}}><QRCodeDisplay value={b.batchNumber} size={60} showActions={true} /></td>
+                            <td style={{fontWeight: 700}}>{b.productName}</td>
+                            <td>{b.batchNumber}</td>
+                            <td>{b.price} {b.currency}</td>
+                            <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>{b.quantity} units</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
@@ -445,7 +449,7 @@ export default function PharmacistDashboard() {
                       <Icons.Scanner /> Scan Medicine
                     </button>
                   </div>
-                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem'}}>
+                  <div className="dash-shipment-grid" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem'}}>
                     <div style={styles.formGroup}>
                       <label style={styles.label}>1. Customer Identifier</label>
                       <input type="text" style={styles.input} placeholder="e.g. Ali Haider / Prescription #123" value={customerName} onChange={e => setCustomerName(e.target.value)} required />
@@ -467,20 +471,22 @@ export default function PharmacistDashboard() {
                   {cart.length > 0 && (
                     <div style={{marginBottom: '2rem'}}>
                       <h4 style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem'}}>Basket Summary</h4>
-                      <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
-                        <tbody>
-                          {cart.map(item => (
-                            <tr key={item.batchNumber} style={styles.tableRow}>
-                              <td><div style={{fontWeight: 700}}>{item.productName}</div><div style={{fontSize: '0.7rem'}}>{item.batchNumber}</div></td>
-                              <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '80px'}} value={item.quantity} onChange={e => updateCartItem(item.batchNumber, 'quantity', e.target.value)} /></td>
-                              <td>{item.price} {item.currency}</td>
-                              <td>{Number(item.quantity || 0) * Number(item.price)} {item.currency}</td>
-                              <td><button onClick={() => removeFromCart(item.batchNumber)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Icons.Trash /></button></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className="dash-table-wrap" style={styles.tableWrapper}>
+                        <table style={styles.table}>
+                          <thead><tr style={styles.tableHeader}><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
+                          <tbody>
+                            {cart.map(item => (
+                              <tr key={item.batchNumber} style={styles.tableRow}>
+                                <td><div style={{fontWeight: 700}}>{item.productName}</div><div style={{fontSize: '0.7rem'}}>{item.batchNumber}</div></td>
+                                <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '80px'}} value={item.quantity} onChange={e => updateCartItem(item.batchNumber, 'quantity', e.target.value)} /></td>
+                                <td>{item.price} {item.currency}</td>
+                                <td>{Number(item.quantity || 0) * Number(item.price)} {item.currency}</td>
+                                <td><button onClick={() => removeFromCart(item.batchNumber)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Icons.Trash /></button></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                       <div style={{textAlign: 'right', marginTop: '1.5rem', fontSize: '1.1rem', fontWeight: 800}}>Grand Total: {cart.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.price)), 0)} {cart[0]?.currency}</div>
                       <button onClick={handleCheckout} className="btn btn-primary" style={{marginTop: '2rem', width: '100%'}}>Finalize Sale & Generate Receipt</button>
                     </div>

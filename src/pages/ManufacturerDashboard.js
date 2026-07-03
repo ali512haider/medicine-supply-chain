@@ -449,7 +449,7 @@ export default function ManufacturerDashboard() {
             <>
               {activeTab === 'overview' && (
                 <>
-                  <div style={styles.statsGrid}>
+                  <div className="dash-stats-grid" style={styles.statsGrid}>
                     <StatCard title="Batches Produced" value={stats.total} Icon={Icons.Overview} color="#10b981" />
                     <StatCard title="Current Stock" value={stats.stock} Icon={Icons.Add} color="#3b82f6" />
                     <StatCard title="Expired Items" value={stats.expired} Icon={Icons.Alert} color="#f59e0b" />
@@ -457,7 +457,7 @@ export default function ManufacturerDashboard() {
                   </div>
                   <div className="glass-panel" style={{marginTop: '2rem'}}>
                     <h3 style={styles.panelTitle}>Recent Production</h3>
-                    <div style={styles.tableWrapper}>
+                    <div className="dash-table-wrap" style={styles.tableWrapper}>
                       <table style={styles.table}>
                         <thead><tr style={styles.tableHeader}><th>Batch QR</th><th>Batch #</th><th>Product</th><th>Quantity</th><th>Status</th><th>Action</th></tr></thead>
                         <tbody>
@@ -511,46 +511,48 @@ export default function ManufacturerDashboard() {
                       </select>
                       <button onClick={handleAddDistributor} className="btn btn-primary">Authorize</button>
                    </div>
-                   <table style={styles.table}>
-                      <thead>
-                        <tr style={styles.tableHeader}>
-                          <th>Name</th>
-                          <th>Wallet Address</th>
-                          <th>Status</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allDistributors.filter(d => myDistributors.includes(d.address.toLowerCase())).map(d => (
-                          <tr key={d.address} style={styles.tableRow}>
-                            <td>{d.name}</td>
-                            <td>{d.address}</td>
-                            <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>Authorized</span></td>
-                            <td>
-                              <button 
-                                onClick={() => handleRemoveDistributor(d.address)} 
-                                className="btn btn-outline" 
-                                style={{padding: '4px 12px', fontSize: '0.8rem', color: '#ef4444', borderColor: '#fee2e2'}}
-                              >
-                                Unauthorize
-                              </button>
-                            </td>
+                   <div className="dash-table-wrap" style={styles.tableWrapper}>
+                     <table style={styles.table}>
+                        <thead>
+                          <tr style={styles.tableHeader}>
+                            <th>Name</th>
+                            <th>Wallet Address</th>
+                            <th>Status</th>
+                            <th>Action</th>
                           </tr>
-                        ))}
-                        {allDistributors.filter(d => myDistributors.includes(d.address.toLowerCase())).length === 0 && (
-                          <tr>
-                            <td colSpan="4" style={{textAlign: 'center', padding: '2rem', color: '#94a3b8'}}>No distributors authorized yet.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                   </table>
+                        </thead>
+                        <tbody>
+                          {allDistributors.filter(d => myDistributors.includes(d.address.toLowerCase())).map(d => (
+                            <tr key={d.address} style={styles.tableRow}>
+                              <td>{d.name}</td>
+                              <td>{d.address}</td>
+                              <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>Authorized</span></td>
+                              <td>
+                                <button 
+                                  onClick={() => handleRemoveDistributor(d.address)} 
+                                  className="btn btn-outline" 
+                                  style={{padding: '4px 12px', fontSize: '0.8rem', color: '#ef4444', borderColor: '#fee2e2'}}
+                                >
+                                  Unauthorize
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {allDistributors.filter(d => myDistributors.includes(d.address.toLowerCase())).length === 0 && (
+                            <tr>
+                              <td colSpan="4" style={{textAlign: 'center', padding: '2rem', color: '#94a3b8'}}>No distributors authorized yet.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                     </table>
+                   </div>
                 </div>
               )}
 
               {activeTab === 'transfer' && (
                 <div className="glass-panel" style={{maxWidth: '900px'}}>
                   <h3 style={styles.panelTitle}>Initiate Shipment Dispatch</h3>
-                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem'}}>
+                  <div className="dash-shipment-grid" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem'}}>
                     <div style={styles.formGroup}>
                       <label style={styles.label}>1. Select Target Distributor</label>
                       <select style={styles.input} value={shipmentDistributor} onChange={e => setShipmentDistributor(e.target.value)}>
@@ -573,20 +575,22 @@ export default function ManufacturerDashboard() {
                   {shipmentItems.length > 0 && (
                     <div style={{marginBottom: '2rem'}}>
                       <h4 style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem'}}>Shipment Manifest</h4>
-                      <table style={styles.table}>
-                        <thead><tr style={styles.tableHeader}><th>Batch</th><th>Quantity</th><th>Unit Price</th><th>Subtotal</th><th></th></tr></thead>
-                        <tbody>
-                          {shipmentItems.map(item => (
-                            <tr key={item.batchNumber} style={styles.tableRow}>
-                              <td><div style={{fontWeight: 700}}>{item.productName}</div><div style={{fontSize: '0.7rem'}}>{item.batchNumber}</div></td>
-                              <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '100px'}} placeholder="Qty" value={item.quantity} onChange={e => updateShipmentItem(item.batchNumber, 'quantity', e.target.value)} /></td>
-                              <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '100px'}} placeholder="Price" value={item.price} onChange={e => updateShipmentItem(item.batchNumber, 'price', e.target.value)} /></td>
-                              <td>{Number(item.quantity || 0) * Number(item.price || 0)} {item.currency}</td>
-                              <td><button onClick={() => removeBatchFromShipment(item.batchNumber)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Icons.Trash /></button></td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <div className="dash-table-wrap" style={styles.tableWrapper}>
+                         <table style={styles.table}>
+                           <thead><tr style={styles.tableHeader}><th>Batch</th><th>Quantity</th><th>Unit Price</th><th>Subtotal</th><th></th></tr></thead>
+                           <tbody>
+                             {shipmentItems.map(item => (
+                               <tr key={item.batchNumber} style={styles.tableRow}>
+                                 <td><div style={{fontWeight: 700}}>{item.productName}</div><div style={{fontSize: '0.7rem'}}>{item.batchNumber}</div></td>
+                                 <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '100px'}} placeholder="Qty" value={item.quantity} onChange={e => updateShipmentItem(item.batchNumber, 'quantity', e.target.value)} /></td>
+                                 <td><input type="number" style={{...styles.input, padding: '4px 8px', width: '100px'}} placeholder="Price" value={item.price} onChange={e => updateShipmentItem(item.batchNumber, 'price', e.target.value)} /></td>
+                                 <td>{Number(item.quantity || 0) * Number(item.price || 0)} {item.currency}</td>
+                                 <td><button onClick={() => removeBatchFromShipment(item.batchNumber)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Icons.Trash /></button></td>
+                               </tr>
+                             ))}
+                           </tbody>
+                         </table>
+                      </div>
                       <button onClick={handleBulkTransfer} className="btn btn-primary" style={{marginTop: '2rem', width: '100%'}}>Commit Dispatch to Ledger</button>
                     </div>
                   )}
@@ -630,10 +634,12 @@ export default function ManufacturerDashboard() {
               {activeTab === 'recalled' && (
                 <div className="glass-panel">
                   <h3 style={{...styles.panelTitle, color: '#ef4444'}}>Recalled Inventory</h3>
-                  <table style={styles.table}>
-                    <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Quantity</th></tr></thead>
-                    <tbody>{batches.filter(b => b.isRecalled).map(b => (<tr key={b.batchNumber} style={styles.tableRow}><td>{b.batchNumber}</td><td>{b.productName}</td><td>{b.quantity}</td></tr>))}</tbody>
-                  </table>
+                  <div className="dash-table-wrap" style={styles.tableWrapper}>
+                     <table style={styles.table}>
+                       <thead><tr style={styles.tableHeader}><th>Batch #</th><th>Product</th><th>Quantity</th></tr></thead>
+                       <tbody>{batches.filter(b => b.isRecalled).map(b => (<tr key={b.batchNumber} style={styles.tableRow}><td>{b.batchNumber}</td><td>{b.productName}</td><td>{b.quantity}</td></tr>))}</tbody>
+                     </table>
+                   </div>
                 </div>
               )}
             </>

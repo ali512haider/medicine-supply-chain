@@ -330,7 +330,7 @@ export default function AdminDashboard() {
                {activeTab === 'users' && (
                   <div className="glass-panel">
                     <h3 style={styles.panelTitle}>Registered Network Entities</h3>
-                    <div style={styles.tableWrapper}>
+                    <div className="dash-table-wrap" style={styles.tableWrapper}>
                       <table style={styles.table}>
                         <thead><tr style={styles.tableHeader}><th>Name</th><th>Role</th><th>License</th><th>Status</th></tr></thead>
                         <tbody>
