@@ -28,6 +28,9 @@ const Icons = {
   ),
   Trash: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+  ),
+  Bell: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
   )
 };
 
@@ -59,6 +62,20 @@ export default function ManufacturerDashboard() {
   const [shipmentItems, setShipmentItems] = useState([]); 
   const [selectedBatch, setSelectedBatch] = useState('');
   const [lastInvoice, setLastInvoice] = useState(null);
+
+  // Notification state & ref
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationsRef = useRef();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -169,6 +186,19 @@ export default function ManufacturerDashboard() {
       setDistToAdd('');
       fetchData();
     } catch (err) { setActionMsg('❌ Auth Failed'); }
+  };
+
+  const handleRemoveDistributor = async (addr) => {
+    try {
+      setActionMsg('⏳ Unauthorizing Distributor...');
+      const tx = await contracts.transfer.removeDistributor(addr);
+      await tx.wait();
+      setActionMsg('✅ Distributor Unauthorized');
+      fetchData();
+    } catch (err) { 
+      console.error(err);
+      setActionMsg('❌ Revocation Failed'); 
+    }
   };
 
   const addBatchToShipment = () => {
@@ -300,6 +330,17 @@ export default function ManufacturerDashboard() {
     } catch (err) { setActionMsg('❌ Recall Failed'); }
   };
 
+  const expiredBatches = batches.filter(b => b.isExpired);
+  const notifications = [
+    ...expiredBatches.map(b => ({
+      id: `exp-${b.batchNumber}`,
+      type: 'expiry',
+      title: 'Expired Batch Alert',
+      text: `Batch #${b.batchNumber} (${b.productName}) has expired.`,
+      date: new Date(b.expiryDate * 1000).toLocaleDateString()
+    }))
+  ];
+
   return (
     <div style={styles.dashboardWrapper}>
       <Modal 
@@ -353,6 +394,44 @@ export default function ManufacturerDashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
+            
+            {/* Notifications Dropdown */}
+            <div style={{ position: 'relative' }} ref={notificationsRef}>
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} 
+                style={{ ...styles.iconBtn, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: '50%', background: '#f8fafc', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+              >
+                <Icons.Bell />
+                {notifications.length > 0 && (
+                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 'bold', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <div style={{ position: 'absolute', right: 0, top: '45px', width: '320px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0', zIndex: 1000, padding: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>Notifications</span>
+                    {notifications.length > 0 && <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '99px', fontWeight: 600 }}>{notifications.length} Alert{notifications.length > 1 ? 's' : ''}</span>}
+                  </div>
+                  <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.85rem' }}>No new notifications</div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} style={{ padding: '0.75rem', borderRadius: '8px', background: n.type === 'expiry' ? '#fef2f2' : '#f0fdf4', borderLeft: `4px solid ${n.type === 'expiry' ? '#ef4444' : '#10b981'}` }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.8rem', color: n.type === 'expiry' ? '#991b1b' : '#065f46', marginBottom: '2px' }}>{n.title}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: '1.3' }}>{n.text}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '4px', textAlign: 'right' }}>{n.date}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={styles.userProfile}>
                <div style={styles.avatar}>{account?.slice(2,4).toUpperCase()}</div>
                {!isMobile && <span style={styles.userName}>{entityName}</span>}
@@ -430,8 +509,37 @@ export default function ManufacturerDashboard() {
                       <button onClick={handleAddDistributor} className="btn btn-primary">Authorize</button>
                    </div>
                    <table style={styles.table}>
-                      <thead><tr style={styles.tableHeader}><th>Name</th><th>Wallet Address</th></tr></thead>
-                      <tbody>{allDistributors.filter(d => myDistributors.includes(d.address.toLowerCase())).map(d => (<tr key={d.address} style={styles.tableRow}><td>{d.name}</td><td>{d.address}</td></tr>))}</tbody>
+                      <thead>
+                        <tr style={styles.tableHeader}>
+                          <th>Name</th>
+                          <th>Wallet Address</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allDistributors.filter(d => myDistributors.includes(d.address.toLowerCase())).map(d => (
+                          <tr key={d.address} style={styles.tableRow}>
+                            <td>{d.name}</td>
+                            <td>{d.address}</td>
+                            <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>Authorized</span></td>
+                            <td>
+                              <button 
+                                onClick={() => handleRemoveDistributor(d.address)} 
+                                className="btn btn-outline" 
+                                style={{padding: '4px 12px', fontSize: '0.8rem', color: '#ef4444', borderColor: '#fee2e2'}}
+                              >
+                                Unauthorize
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {allDistributors.filter(d => myDistributors.includes(d.address.toLowerCase())).length === 0 && (
+                          <tr>
+                            <td colSpan="4" style={{textAlign: 'center', padding: '2rem', color: '#94a3b8'}}>No distributors authorized yet.</td>
+                          </tr>
+                        )}
+                      </tbody>
                    </table>
                 </div>
               )}

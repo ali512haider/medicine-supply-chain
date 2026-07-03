@@ -31,6 +31,9 @@ const Icons = {
   ),
   Scanner: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
+  ),
+  Bell: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
   )
 };
 
@@ -58,6 +61,20 @@ export default function PharmacistDashboard() {
   const [cart, setCart] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState('');
   const [lastInvoice, setLastInvoice] = useState(null);
+
+  // Notification state & ref
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationsRef = useRef();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -108,7 +125,8 @@ export default function PharmacistDashboard() {
             productName: b.productName, 
             quantity: qty.toString(), 
             price: b.costPerUnit.toString(),
-            currency: b.currency 
+            currency: b.currency,
+            expiryDate: Number(b.expiryDate)
           });
         }
       }
@@ -270,6 +288,24 @@ export default function PharmacistDashboard() {
     WindowPrt.close();
   };
 
+  const expiredStockAlerts = inventory.filter(b => Number(b.quantity) > 0 && Number(b.expiryDate) * 1000 < Date.now());
+  const notifications = [
+    ...inbox.map(req => ({
+      id: `req-${req.id}`,
+      type: 'transfer',
+      title: 'New Inbound Transfer',
+      text: `${req.quantity} units of ${req.productName} from ${req.sender.slice(0, 10)}...`,
+      date: 'Pending'
+    })),
+    ...expiredStockAlerts.map(b => ({
+      id: `exp-${b.batchNumber}`,
+      type: 'expiry',
+      title: 'Expired Stock Alert',
+      text: `Batch #${b.batchNumber} (${b.productName}) on shelf has expired.`,
+      date: new Date(b.expiryDate * 1000).toLocaleDateString()
+    }))
+  ];
+
   return (
     <div style={styles.dashboardWrapper}>
       <QRScanner 
@@ -300,6 +336,44 @@ export default function PharmacistDashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
+            
+            {/* Notifications Dropdown */}
+            <div style={{ position: 'relative' }} ref={notificationsRef}>
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} 
+                style={{ ...styles.iconBtn, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: '50%', background: '#f8fafc', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+              >
+                <Icons.Bell />
+                {notifications.length > 0 && (
+                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 'bold', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <div style={{ position: 'absolute', right: 0, top: '45px', width: '320px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0', zIndex: 1000, padding: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>Notifications</span>
+                    {notifications.length > 0 && <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '99px', fontWeight: 600 }}>{notifications.length} Alert{notifications.length > 1 ? 's' : ''}</span>}
+                  </div>
+                  <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.85rem' }}>No new notifications</div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} style={{ padding: '0.75rem', borderRadius: '8px', background: n.type === 'expiry' ? '#fef2f2' : '#f0fdf4', borderLeft: `4px solid ${n.type === 'expiry' ? '#ef4444' : '#10b981'}` }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.8rem', color: n.type === 'expiry' ? '#991b1b' : '#065f46', marginBottom: '2px' }}>{n.title}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: '1.3' }}>{n.text}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '4px', textAlign: 'right' }}>{n.date}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={styles.userProfile}><div style={{...styles.avatar, background: '#10b981'}}>PH</div>{!isMobile && <span style={styles.userName}>{entityName}</span>}</div>
           </div>
         </header>

@@ -21,3 +21,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Truffle / Smart Contract secrets — NEVER commit this
+myProject/.env
+myProject/node_modules/
+myProject/build/

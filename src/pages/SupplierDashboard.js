@@ -31,6 +31,9 @@ const Icons = {
   ),
   Scanner: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
+  ),
+  Bell: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
   )
 };
 
@@ -62,6 +65,20 @@ export default function SupplierDashboard() {
   const [shipmentItems, setShipmentItems] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState('');
   const [lastInvoice, setLastInvoice] = useState(null);
+
+  // Notification state & ref
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationsRef = useRef();
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -112,7 +129,8 @@ export default function SupplierDashboard() {
             productName: b.productName, 
             quantity: qty.toString(),
             price: b.costPerUnit.toString(),
-            currency: b.currency 
+            currency: b.currency,
+            expiryDate: Number(b.expiryDate)
           });
         }
       }
@@ -196,6 +214,19 @@ export default function SupplierDashboard() {
     } catch (err) { setActionMsg('❌ Failed'); }
   };
 
+  const handleRemovePharmacist = async (addr) => {
+    try {
+      setActionMsg('⏳ Unauthorizing Pharmacist...');
+      const tx = await contracts.transfer.removePharmacist(addr);
+      await tx.wait();
+      setActionMsg('✅ Pharmacist Unauthorized');
+      fetchData();
+    } catch (err) { 
+      console.error(err);
+      setActionMsg('❌ Revocation Failed'); 
+    }
+  };
+
   const addBatchToShipment = () => {
     if (!selectedBatch) return;
     addBatchToShipmentByValue(selectedBatch);
@@ -267,6 +298,24 @@ export default function SupplierDashboard() {
     WindowPrt.close();
   };
 
+  const expiredStockAlerts = stock.filter(b => Number(b.quantity) > 0 && Number(b.expiryDate) * 1000 < Date.now());
+  const notifications = [
+    ...inbox.map(req => ({
+      id: `req-${req.id}`,
+      type: 'transfer',
+      title: 'New Inbound Transfer',
+      text: `${req.quantity} units of ${req.productName} from ${req.sender.slice(0, 10)}...`,
+      date: 'Pending'
+    })),
+    ...expiredStockAlerts.map(b => ({
+      id: `exp-${b.batchNumber}`,
+      type: 'expiry',
+      title: 'Expired Stock Alert',
+      text: `Batch #${b.batchNumber} (${b.productName}) in stock has expired.`,
+      date: new Date(b.expiryDate * 1000).toLocaleDateString()
+    }))
+  ];
+
   return (
     <div style={styles.dashboardWrapper}>
       <QRScanner 
@@ -298,6 +347,44 @@ export default function SupplierDashboard() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             {actionMsg && <div style={styles.toast}>{actionMsg}</div>}
+            
+            {/* Notifications Dropdown */}
+            <div style={{ position: 'relative' }} ref={notificationsRef}>
+              <button 
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} 
+                style={{ ...styles.iconBtn, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px', borderRadius: '50%', background: '#f8fafc', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+              >
+                <Icons.Bell />
+                {notifications.length > 0 && (
+                  <span style={{ position: 'absolute', top: '-2px', right: '-2px', background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 'bold', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <div style={{ position: 'absolute', right: 0, top: '45px', width: '320px', background: 'white', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0', zIndex: 1000, padding: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>Notifications</span>
+                    {notifications.length > 0 && <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '99px', fontWeight: 600 }}>{notifications.length} Alert{notifications.length > 1 ? 's' : ''}</span>}
+                  </div>
+                  <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.85rem' }}>No new notifications</div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} style={{ padding: '0.75rem', borderRadius: '8px', background: n.type === 'expiry' ? '#fef2f2' : '#f0fdf4', borderLeft: `4px solid ${n.type === 'expiry' ? '#ef4444' : '#10b981'}` }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.8rem', color: n.type === 'expiry' ? '#991b1b' : '#065f46', marginBottom: '2px' }}>{n.title}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#475569', lineHeight: '1.3' }}>{n.text}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '4px', textAlign: 'right' }}>{n.date}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={styles.userProfile}><div style={{...styles.avatar, background: '#8b5cf6'}}>SN</div>{!isMobile && <span style={styles.userName}>{entityName}</span>}</div>
           </div>
         </header>
@@ -351,6 +438,59 @@ export default function SupplierDashboard() {
                           <td>{b.quantity} units</td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {activeTab === 'pharmacists' && (
+                <div className="glass-panel" style={{maxWidth: '800px'}}>
+                  <h3 style={styles.panelTitle}>Retail Network Management</h3>
+                  <div style={{display: 'flex', gap: '1rem', marginBottom: '2.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0'}}>
+                    <div style={{flex: 1}}>
+                      <label style={styles.label}>Authorize New Pharmacy Address</label>
+                      <select style={styles.input} value={pharmToAdd} onChange={e => setPharmToAdd(e.target.value)}>
+                        <option value="">-- Select Registered Pharmacy --</option>
+                        {allPharmacists.filter(p => !myPharmacists.includes(p.address.toLowerCase())).map(p => (
+                          <option key={p.address} value={p.address}>{p.name} ({p.address.slice(0,10)}...)</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button onClick={handleAddPharmacist} className="btn btn-primary" style={{alignSelf: 'flex-end', height: '45px'}}>Authorize</button>
+                  </div>
+
+                  <h4 style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem'}}>Authorized Retail Partners</h4>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr style={styles.tableHeader}>
+                        <th>Pharmacy Name</th>
+                        <th>Wallet Address</th>
+                        <th>Network Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allPharmacists.filter(p => myPharmacists.includes(p.address.toLowerCase())).map(p => (
+                        <tr key={p.address} style={styles.tableRow}>
+                          <td style={{fontWeight: 700}}>{p.name}</td>
+                          <td style={{fontSize: '0.8rem', color: '#64748b'}}>{p.address}</td>
+                          <td><span style={{...styles.badge, background: '#f0fdf4', color: '#10b981'}}>Active Partner</span></td>
+                          <td>
+                            <button 
+                              onClick={() => handleRemovePharmacist(p.address)} 
+                              className="btn btn-outline" 
+                              style={{padding: '4px 12px', fontSize: '0.8rem', color: '#ef4444', borderColor: '#fee2e2'}}
+                            >
+                              Unauthorize
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {allPharmacists.filter(p => myPharmacists.includes(p.address.toLowerCase())).length === 0 && (
+                        <tr>
+                          <td colSpan="4" style={{textAlign: 'center', padding: '2rem', color: '#94a3b8'}}>No pharmacists authorized yet.</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
