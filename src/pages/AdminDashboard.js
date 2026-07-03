@@ -286,13 +286,13 @@ export default function AdminDashboard() {
              <>
                {activeTab === 'overview' && (
                  <>
-                   <div style={styles.statsGrid}>
+                   <div className="dash-stats-grid" style={styles.statsGrid}>
                      <StatCard title="Manufacturers" value={stats.manufacturers} Icon={Icons.Overview} color="#10b981" />
                      <StatCard title="Distributors" value={stats.distributors} Icon={Icons.Overview} color="#3b82f6" />
                      <StatCard title="Suppliers" value={stats.suppliers} Icon={Icons.Overview} color="#8b5cf6" />
                      <StatCard title="Pharmacists" value={stats.pharmacists} Icon={Icons.Overview} color="#f59e0b" />
                    </div>
-                   <div style={{...styles.statsGrid, marginTop: '1.5rem'}}>
+                   <div className="dash-stats-grid" style={{...styles.statsGrid, marginTop: '1.5rem'}}>
                      <StatCard title="Total Batches" value={stats.batches} Icon={Icons.Medicine} color="#10b981" />
                      <StatCard title="Approval Queue" value={stats.pending} Icon={Icons.Shield} color="#ef4444" />
                      <StatCard title="Active Users" value={stats.active} Icon={Icons.Activity} color="#10b981" />
@@ -303,7 +303,7 @@ export default function AdminDashboard() {
                {activeTab === 'pending' && (
                  <div className="glass-panel">
                     <h3 style={styles.panelTitle}>Pending Approval Requests</h3>
-                    <div style={styles.tableWrapper}>
+                    <div className="dash-table-wrap" style={styles.tableWrapper}>
                       <table style={styles.table}>
                         <thead><tr style={styles.tableHeader}><th>Entity</th><th>Role</th><th>Email</th><th>Location</th><th>Action</th></tr></thead>
                         <tbody>

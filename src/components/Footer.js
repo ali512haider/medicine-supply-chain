@@ -5,10 +5,10 @@ import logo from '../assets/logo.png';
 export default function Footer() {
   return (
     <footer style={styles.footer}>
-      <div className="container" style={styles.content}>
+      <div className="container footer-content" style={styles.content}>
         
         {/* Brand & Mission */}
-        <div style={styles.brandCol}>
+        <div style={styles.brandCol} className="footer-brand">
           <Link to="/" style={styles.logoLink}>
             <img src={logo} alt="MediTrace" style={styles.logoImg} />
             <span style={styles.logoText}>Medi<span className="gradient-text">Trace</span></span>
@@ -25,7 +25,7 @@ export default function Footer() {
         </div>
 
         {/* Links Grid */}
-        <div style={styles.linksGrid}>
+        <div style={styles.linksGrid} className="footer-links-grid">
           <div style={styles.linkCol}>
             <h4 style={styles.colTitle}>Platform</h4>
             <Link to="/" style={styles.link}>Home</Link>
@@ -49,7 +49,7 @@ export default function Footer() {
       </div>
 
       <div style={styles.bottomBar}>
-        <div className="container" style={styles.bottomContent}>
+        <div className="container footer-bottom" style={styles.bottomContent}>
           <p style={styles.copyright}>© 2026 MediTrace Blockchain. Developed at UET Taxila.</p>
           <div style={styles.bottomLinks}>
             <span style={styles.status}>Network: <span style={{color: '#10b981', fontWeight: 700}}>Operational</span></span>

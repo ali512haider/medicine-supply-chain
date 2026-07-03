@@ -51,7 +51,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Links */}
-        <div style={styles.desktopNav}>
+        <div className="hide-mobile" style={styles.desktopNav}>
           {navLinks.map(link => (
             <Link 
               key={link.name} 
@@ -71,7 +71,7 @@ export default function Navbar() {
         <div style={styles.authGroup}>
           {status === 'connected' && account ? (
             <div style={styles.userInfo}>
-              <Link to={getDashboardRoute()} className="btn btn-primary" style={styles.dashboardBtn}>
+              <Link to={getDashboardRoute()} className="btn btn-primary hide-mobile" style={styles.dashboardBtn}>
                 Dashboard
               </Link>
               <div style={styles.accountBadge} onClick={handleLogout}>
@@ -82,7 +82,7 @@ export default function Navbar() {
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem' }} className="hide-mobile">
               <button onClick={connectWallet} className="btn btn-outline" style={{ border: 'none', background: 'transparent' }}>
                 Login
               </button>
@@ -93,7 +93,7 @@ export default function Navbar() {
           )}
           
           {/* Mobile Menu Toggle */}
-          <button style={styles.menuToggle} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <button className="nav-menu-toggle" style={styles.menuToggle} onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
         </div>
@@ -107,8 +107,24 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
-          {!account && (
-             <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={styles.mobileNavLink}>Register Now</Link>
+          {status === 'connected' && account ? (
+            <>
+              <Link key="mobile-dash" to={getDashboardRoute()} onClick={() => setMobileMenuOpen(false)} style={styles.mobileNavLink}>
+                Dashboard
+              </Link>
+              <button key="mobile-logout" onClick={() => { setMobileMenuOpen(false); handleLogout(); }} style={{ ...styles.mobileNavLink, border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}>
+                Disconnect ({account.substring(0, 6)}...)
+              </button>
+            </>
+          ) : (
+            <>
+              <button key="mobile-login" onClick={() => { setMobileMenuOpen(false); connectWallet(); }} style={{ ...styles.mobileNavLink, border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', width: '100%' }}>
+                Connect Wallet
+              </button>
+              <Link key="mobile-register" to="/register" onClick={() => setMobileMenuOpen(false)} style={styles.mobileNavLink}>
+                Register Organization
+              </Link>
+            </>
           )}
         </div>
       )}
