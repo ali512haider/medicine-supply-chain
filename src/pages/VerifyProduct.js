@@ -53,7 +53,7 @@ export default function VerifyProduct() {
   };
 
   return (
-    <div style={styles.container}>
+    <div className="verify-page-container" style={styles.container}>
       <QRScanner 
         isOpen={isScannerOpen} 
         onClose={() => setIsScannerOpen(false)} 
@@ -61,21 +61,21 @@ export default function VerifyProduct() {
         onScanError={() => {}} 
       />
 
-      <div style={styles.card}>
+      <div className="verify-card animate-slide-up" style={styles.card}>
         <div style={styles.header}>
           <h1 style={styles.title}>Verify Medicine</h1>
           <p style={styles.subtitle}>Instant Blockchain Authenticity Check</p>
         </div>
 
         <div style={styles.searchSection}>
-          <div style={styles.inputGroup}>
+          <div className="verify-input-group" style={styles.inputGroup}>
             <input 
               style={styles.input} 
               placeholder="Enter Batch Number"
               value={batchNumber}
               onChange={(e) => setBatchNumber(e.target.value)}
             />
-            <button onClick={() => handleVerify()} className="btn btn-primary" disabled={loading} style={{padding: '0 2rem'}}>
+            <button onClick={() => handleVerify()} className="btn btn-primary verify-btn" disabled={loading} style={{padding: '0 2rem'}}>
               {loading ? '...' : 'Verify'}
             </button>
           </div>
@@ -105,7 +105,7 @@ export default function VerifyProduct() {
                 )}
             </div>
 
-            <div style={styles.infoGrid}>
+            <div className="verify-info-grid" style={styles.infoGrid}>
                 <div style={styles.infoItem}>
                     <label style={styles.infoLabel}>Medicine Name</label>
                     <div style={styles.infoValue}>{product.name}</div>
